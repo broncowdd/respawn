@@ -2,6 +2,7 @@
 body {
 	background:url(paper.png) #efe;
 	width: 100%;
+	min-width:320px;
 	margin:0;padding:0;
 	font-family: Georgia, Serif;font-size : 16px; color: #050;
 }
@@ -28,12 +29,15 @@ header{
 	background-image: -o-linear-gradient( top, #555, #333); background-image: -webkit-gradient(linear, center top, center bottom, from(#555), to(#333)); background-image: -webkit-linear-gradient( top, #555, #333); background-image: linear-gradient( top, #555, #333);   
 }
 	header nav{display:inline-block; vertical-align: top;}
+	header nav p{color:lightgreen;text-shadow: 0 1px 1px black;font-size:20px;}
 
 aside{height:100%;padding-bottom : 70px;text-align:center;}
 aside ul{padding:0;}
 aside li{margin:5px;list-style:none;vertical-align:middle;border-radius:3px;}
 aside .public li{background:rgba(100,255,100,0.2);}
 aside .private li{background:rgba(255,100,100,0.2);}
+aside .public {background:rgba(100,255,100,0.2);}
+aside .private {background:rgba(255,100,100,0.2);}
 aside li em {font-size:10px ; color:#484;}
 aside li img {vertical-align:bottom;margin:1px;width:16px;height:16px;}
 aside li a.suppr, aside li a.origine{opacity:0.5;width:16px;height:16px;display:inline-block;background:url(actions.png) no-repeat  0 -159px ;}
@@ -42,7 +46,7 @@ aside li a.suppr:hover,aside li a.origine:hover{opacity:1;}
 aside li a.toprivate,aside li a.topublic{float:right;margin-right:5px;opacity:0.5;}
 aside li a.toprivate:hover,aside li a.topublic:hover{opacity:1;}
 
-aside .public,.private{text-align:left;vertical-align:top; margin-top:25px;padding:10px; border-radius:5px; border:1px dashed;display:inline-block;width:45%;}
+aside .public,.private{min-width:300px;text-align:left;vertical-align:top; margin-top:25px;padding:10px; border-radius:5px; border:1px dashed;display:inline-block;}
 aside .public{border-color:green;}
 aside .private{border-color:red;}
 footer	{text-align: right; color:#F80;text-shadow: 0 1px 1px black; position:fixed;bottom:0;left:0;right:0;height:auto;min-height:20px;padding : 5px ; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; border-top:1px solid #888;-moz-box-shadow: 0 0px 9px #000; -webkit-box-shadow: 0 0px 9px #000; box-shadow: 0 0px 9px #000; -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=9, Direction=135, Color='#000')"; filter: progid:DXImageTransform.Microsoft.Shadow(Strength=9, Direction=135, Color='#000');   filter: progid:DXImageTransform.Microsoft.gradient(GradientType = 1, startColorstr = #555, endColorstr = #333); -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType = 1, startColorstr = #555, endColorstr = #333)"; background-image: -moz-linear-gradient( top, #555, #333); background-image: -ms-linear-gradient( top, #555, #333); background-image: -o-linear-gradient( top, #555, #333); background-image: -webkit-gradient(linear, center top, center bottom, from(#555), to(#333)); background-image: -webkit-linear-gradient( top, #555, #333); background-image: linear-gradient( top, #555, #333);   }

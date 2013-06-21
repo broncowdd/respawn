@@ -31,8 +31,10 @@ $GLOBALS['public_data_folder'] =  $GLOBALS['data_folder'].'/public';
 $GLOBALS['default_data_folder'] =  $GLOBALS['public_data_folder'];
 $GLOBAL['version']='1.0';
 $GLOBALS['message'] = 'Votre webliothèque perso';
+$GLOBALS['public_title'] = 'Voici la webliothèque publique de Bronco';
 $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:javascript:(function(){var url = location.href;window.open("http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].'?q="+ encodeURIComponent(url),"_blank","menubar=yes,height=600,width=1000,toolbar=yes,scrollbars=yes,status=yes");})();\' >Bookmarklet</a>';
-if ($public){$bookmarklet='';}
+$column_width='width:47%';
+if ($public){$bookmarklet='';$column_width='width:97%';}
 if (!creer_dossier($GLOBALS['data_folder'], TRUE)) { die('Cant create '.$GLOBALS['data_folder'].' folder.'); }
 if (!creer_dossier($GLOBALS['private_data_folder'], TRUE)) { die('Cant create '.$GLOBALS['private_data_folder'].' folder.'); }
 if (!creer_dossier($GLOBALS['public_data_folder'], TRUE)) { die('Cant create '.$GLOBALS['public_data_folder'].' folder.'); }
@@ -429,29 +431,19 @@ function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $
 	// the files in CSS are relative to the CSS !
 	if (preg_match('#^https?://#', $match)) { // url
 		$url_fichier = $match;
-		//echo "u ";
 	}
 	elseif (preg_match('#^//#', $match)) { // absolute path w/o HTTP
 		$url_fichier = $url_p['s'].':'.$match;
-		//echo "h ";
 	}
 	elseif (preg_match('#^/#', $match)) { // absolute local path
 		$url_fichier = $url_p['s'].'://'.$url_p['h'].$match;
-		//echo "l ";
 	}
 	else { // relative local path
-		//echo "r ";
-//		echo '<pre>';print_r($url_p);
 		$uuu = (strlen($url_p['file']) == 0 or preg_match('#/$#', $url_p['pat'])) ? $GLOBALS['url'] : substr($GLOBALS['url'], 0, -strlen($url_p['file'])) ;
-
-//		echo '<pre>'; echo $uuu;
 		$url_fichier = $uuu . substr($match, 0, -strlen($nom_fichier)).$nom_fichier;
 	}
 
 	$url_fichier = html_entity_decode(urldecode($url_fichier));
-	//echo $url_fichier."<br/>\n";
-
-
 	// new rand name, for local storage.
 	$nouveau_nom = rand_new_name($nom_fichier);
 	if ($type == 'css') {
@@ -478,7 +470,6 @@ function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $
 			'type' => $type
 			);
 	}
-
 	// replace the URL with the new filename in the &data.
 	$new_match = str_replace($match, $nouveau_nom, $match1);
 	$data = str_replace($match1, $new_match, $data);
@@ -486,114 +477,77 @@ function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $
 
 	return $retrievable;
 }
-
-
-function rand_new_name($name) {
-//	return 'f_'.str_shuffle('abcd').mt_rand(100, 999).'--'.''.$name;
-	return 'f_'.str_shuffle('abcd').mt_rand(100, 999).'--'.preg_replace('#[^\w.]#', '_', $name);
-}
-
-
+function rand_new_name($name) {return 'f_'.str_shuffle('abcd').mt_rand(100, 999).'--'.preg_replace('#[^\w.]#', '_', $name);}
 if ($GLOBALS['done']['d'] !== FALSE) {
 	switch($GLOBALS['done']['d']) {
-
 		case 'ajout' :
 			header('Location: index.php?done='.$GLOBALS['done']['d'].'&lien='.urlencode($GLOBALS['url']).'&loclink='.urlencode($GLOBALS['done']['lien']));
 			break;
-
 		case 'remove' :
 			header('Location: index.php?done='.$GLOBALS['done']['d']);
 			break;
 	}
 	echo '</div>'."\n";
-
-
 }
 
 /*
  * Displays main form (page to retrieve)
  *
  */
+?>
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8" /></head>
+		<title>Respawn – a PHP WebPage Saver</title>	
+		<link rel="stylesheet" type="text/css" href="design/style.css"/>
+		<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">
+		<!--[if IE]><script> document.createElement("article");document.createElement("aside");document.createElement("section");document.createElement("footer");</script> <![endif]-->
+		
+	</head>
+<body>
+	<header><a href="<?php echo $_SERVER['PHP_SELF'];?>"><img src="design/logo2.png"/></a>
+		<nav id="orpx_nav-bar">
+		<?php 
+			if (!$public){
+				echo "\t".'<form method="get" action="'.$_SERVER['PHP_SELF'].'" style="text-align:center">'."\n";
+				echo "\t\t".'<input id="____q" type="text" size="70" name="q" value="" placeholder="URL from the page to download" />'."\n";
+				echo "\t\t".'<input type="submit" value="Retrieve"/>'."\n";
+				echo "\t".'</form>'."\n";
+			} else{echo '<p>'.$GLOBALS['message'].'</p>';}
+		?>
+		</nav>
+	</header>
+	<aside>
+	<?php
+	if (!$public){
+		if (isset($_GET['done']) and $_GET['done'] !== FALSE) {
+			echo '<div id="new-link">'."\n";
+			switch($_GET['done']) {
+				case 'ajout' :
+					echo "\t".'<a target="_blanc" href="'.urldecode($_GET['loclink']).'">Retrieved page</a> - (<a href="'.htmlspecialchars(urldecode($_GET['lien'])).'">orig. page</a>)' ."\n";
+					break;
 
-echo '<!DOCTYPE html>'."\n";
-echo '<html>'."\n";
-echo "\t".'<head>'."\n";
-echo "\t".'<meta charset="utf-8" /></head>'."\n";
-echo "\t".'<title>Respawn – a PHP WebPage Saver</title>'."\n";
-echo "\t".'<link rel="stylesheet" type="text/css" href="design/style.css"/>'."\n";
-echo "\t".'<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">'."\n";
-echo "\t".'<!--[if IE]><script> document.createElement("article");document.createElement("aside");document.createElement("section");document.createElement("footer");</script> <![endif]-->
-'."\n";
-echo '</head>'."\n";
-echo '<body>'."\n";
-echo "\t<header>".'<a href="'.$_SERVER['PHP_SELF'].'"><img src="design/logo2.png"/></a>'."\n";
-if (!$public){
-	echo '<nav id="orpx_nav-bar">'."\n";
-	echo "\t".'<form method="get" action="'.$_SERVER['PHP_SELF'].'" style="text-align:center">'."\n";
-
-	echo "\t\t".'<input id="____q" type="text" size="70" name="q" value="" placeholder="URL from the page to download" />'."\n";
-	echo "\t\t".'<input type="submit" value="Retrieve"/>'."\n";
-	echo "\t".'</form>'."\n";
-}
-echo '</nav></header>'."\n";
-echo '<aside>'."\n";
-
-if (!$public){
-	if (isset($_GET['done']) and $_GET['done'] !== FALSE) {
-		echo '<div id="new-link">'."\n";
-		switch($_GET['done']) {
-			case 'ajout' :
-				echo "\t".'<a target="_blanc" href="'.urldecode($_GET['loclink']).'">Retrieved page</a> - (<a href="'.htmlspecialchars(urldecode($_GET['lien'])).'">orig. page</a>)' ."\n";
-				break;
-
-			case 'remove' :
-				echo "\t".'Page removed'."\n";
-				break;
-		}
-		echo '</div>'."\n";
-
-	}
-}
-echo '<div class="public">'."\n";
-$liste_pages = scandir($GLOBALS['public_data_folder']);
-if ( ($nb = count($liste_pages)) != 0 ) {
-	echo '<ul id="liste-pages-sauvees">'."\n";
-
-	for ($i = 0 ; $i < $nb ; $i++) {
-		// dont list '.' and '..' folders.
-		if (is_dir($GLOBALS['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
-			// each folder should contain such a file "index.ini".
-			$ini_file = $GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-			$favicon=glob($GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
-			if (!empty($favicon)){$favicon=$favicon[0];}
-			if ( is_file($ini_file) and is_readable($ini_file) ) {
-				$infos = parse_ini_file($ini_file);
-			} else {
-				$infos = FALSE;
+				case 'remove' :
+					echo "\t".'Page removed'."\n";
+					break;
 			}
-			if (FALSE !== $infos) {
-				$titre = $infos['TITLE']; $url = $infos['URL']; $date = date('d/m/Y, H:i:s', $infos['DATE']);
-			} else {
-				$titre = 'titre'; $url = '#'; $date = 'date inconnue';
-			}
-			echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";
+			echo '</div>'."\n";
+
 		}
 	}
-	echo '</ul>'."\n";
-}
-echo '</div>'."\n";
-if (!$public){ // don't list private pages
-	echo '<div class="private">'."\n";
-	$liste_pages = scandir($GLOBALS['private_data_folder']);
+	// public pages
+	echo '<div class="public" style="'.$column_width.'">'."\n";
+	$liste_pages = scandir($GLOBALS['public_data_folder']);
 	if ( ($nb = count($liste_pages)) != 0 ) {
 		echo '<ul id="liste-pages-sauvees">'."\n";
 
 		for ($i = 0 ; $i < $nb ; $i++) {
 			// dont list '.' and '..' folders.
-			if (is_dir($GLOBALS['private_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
+			if (is_dir($GLOBALS['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 				// each folder should contain such a file "index.ini".
-				$ini_file = $GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-				$favicon=glob($GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
+				$ini_file = $GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
+				$favicon=glob($GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
 				if (!empty($favicon)){$favicon=$favicon[0];}
 				if ( is_file($ini_file) and is_readable($ini_file) ) {
 					$infos = parse_ini_file($ini_file);
@@ -605,15 +559,48 @@ if (!$public){ // don't list private pages
 				} else {
 					$titre = 'titre'; $url = '#'; $date = 'date inconnue';
 				}
-				echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a></li>'."\n";
+				echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";
 			}
 		}
 		echo '</ul>'."\n";
 	}
 	echo '</div>'."\n";
-}
-echo '</aside>'."\n";
-echo '<footer>'."\n";
-echo "\t<p style='float:left'>$bookmarklet</p><p><a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v".$GLOBAL['version'].") - ".$GLOBALS['message']." - <a href='?public'>Public page link</a></p>\n";
-echo '</body>'."\n";
-echo '</html>'."\n";
+
+	if (!$public){ // don't list private pages
+	
+		echo '<div class="private" style="'.$column_width.'">'."\n";
+		$liste_pages = scandir($GLOBALS['private_data_folder']);
+		if ( ($nb = count($liste_pages)) != 0 ) {
+			echo '<ul id="liste-pages-sauvees">'."\n";
+
+			for ($i = 0 ; $i < $nb ; $i++) {
+				// dont list '.' and '..' folders.
+				if (is_dir($GLOBALS['private_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
+					// each folder should contain such a file "index.ini".
+					$ini_file = $GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/index.ini';
+					$favicon=glob($GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
+					if (!empty($favicon)){$favicon=$favicon[0];}
+					if ( is_file($ini_file) and is_readable($ini_file) ) {
+						$infos = parse_ini_file($ini_file);
+					} else {
+						$infos = FALSE;
+					}
+					if (FALSE !== $infos) {
+						$titre = $infos['TITLE']; $url = $infos['URL']; $date = date('d/m/Y, H:i:s', $infos['DATE']);
+					} else {
+						$titre = 'titre'; $url = '#'; $date = 'date inconnue';
+					}
+					echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a></li>'."\n";
+				}
+			}
+			echo '</ul>'."\n";
+		}
+		echo '</div>'."\n";
+	}
+?>
+	</aside>
+<footer>
+	<p style='float:left'><?php echo $bookmarklet; ?></p><p><a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <?php $GLOBALS['message'];?> - <a href='?public'>Public page link</a></p>
+</footer>
+</body>
+</html>
