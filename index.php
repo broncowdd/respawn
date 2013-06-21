@@ -36,6 +36,7 @@ $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:j
 $column_width='width:47%';
 if ($public){$bookmarklet='';$column_width='width:97%';}
 if (!creer_dossier($GLOBALS['data_folder'], TRUE)) { die('Cant create '.$GLOBALS['data_folder'].' folder.'); }
+if (!creer_dossier($GLOBALS['data_folder'].'/zipversions', TRUE)) { die('Cant create '.$GLOBALS['data_folder'].'/zipversions'.' folder.'); }
 if (!creer_dossier($GLOBALS['private_data_folder'], TRUE)) { die('Cant create '.$GLOBALS['private_data_folder'].' folder.'); }
 if (!creer_dossier($GLOBALS['public_data_folder'], TRUE)) { die('Cant create '.$GLOBALS['public_data_folder'].' folder.'); }
 
@@ -55,6 +56,7 @@ if (!creer_dossier($GLOBALS['public_data_folder'], TRUE)) { die('Cant create '.$
 // init
 // url not yet retrieved
 $GLOBALS['done']['d'] = FALSE;
+
 if (!$public){
 	// Get URL to save.
 	if (!empty($_GET['q'])) {
@@ -139,7 +141,6 @@ if (!$public){
 				$file = $liste_css[$i];
 				if ($data = get_external_file($file['url_fichier'], 3) and ($data !== FALSE) ) {
 					if (preg_match('#(css|php|txt|html|xml|js)#', $file['url_fichier']) ) {
-
 						$matches_url = array();
 						preg_match_all('#url\s*\(("|\')?([^\'")]*)(\'|")?\)#i', $data, $matches_url, PREG_SET_ORDER);
 						$matches_url2 = array();
@@ -209,17 +210,12 @@ if (!$public){
 				$n++;
 				$count = count($liste_css);
 			}
-
-
 			// enregistre un fichier d’informations concernant la page (date, url, titre)
 			$info  = '';
 			$info .= 'URL="'.$GLOBALS['url'].'"'."\n";
 			$info .= 'TITLE="'.$title.'"'."\n";
 			$info .= 'DATE="'.time().'"'."\n";
-
 			file_put_contents($GLOBALS['target_folder'].'/'.'index.ini', $info);
-
-			// 
 			$GLOBALS['done']['d'] = 'ajout';			
 			$GLOBALS['done']['lien'] = $GLOBALS['target_folder'].'/';			
 		}
@@ -230,17 +226,6 @@ if (!$public){
 	// in case of delete an entry
 	if (isset($_GET['suppr']) and $torem = $_GET['suppr'] and $torem != '') {
 		$torem = htmlspecialchars($_GET['suppr']);
-	/*
-	    $liste = scandir($GLOBALS['data_folder']); // listage des dossiers de data.
-	    $nb_fichier = count($liste);
-	    for ($i = 0 ; $i < $nb_fichier ; $i++) {
-	        if ($liste[$i] == $torem and !($liste[$i] == '..' or $liste[$i] == '.')) {*/
-
-					// the folder exists and can be removed:
-
-
-					// included files first (noway doing it like "rmdir -R" :/)
-
 		if (is_dir($_GET['suppr'])){
 			$sousliste = scandir($_GET['suppr']); // listage des dossiers de data.
 			$nb_sousfichier = count($sousliste);
@@ -275,7 +260,36 @@ if (!$public){
 			header("location: index.php");
 		}
 	}
-} // end of private admin acces
+
+	if (isset($_GET['zipprivate'])) {
+
+		$zip_filename=$GLOBALS['data_folder'].'/zipversions/'.$_GET['zipprivate'].'.zip';
+		
+		if (is_file($zip_filename)){header("location: $zip_filename");exit();}
+		if (is_dir($GLOBALS['private_data_folder'].'/'.$_GET['zipprivate'])){
+			include 'zip.php';
+			zip($_GET['zipprivate'].'.zip',$GLOBALS['private_data_folder'].'/'.$_GET['zipprivate'],$GLOBALS['data_folder'].'/zipversions/');
+			header("location: $zip_filename");
+		}
+	}
+}
+	// public get 
+	//download public zip version
+	if (isset($_GET['zippublic'])) {
+
+		$zip_filename=$GLOBALS['data_folder'].'/zipversions/'.$_GET['zippublic'].'.zip';	
+		if (is_file($zip_filename)){header("location: $zip_filename");exit();}
+		if (is_dir($GLOBALS['public_data_folder'].'/'.$_GET['zippublic'])){
+			include 'zip.php';
+
+			rename ($GLOBALS['public_data_folder'].'/'.$_GET['zippublic'],$_GET['zippublic']); // on le déplace pour éviter de voir la structure de dossiers apparaître dans le zip
+			zip($_GET['zippublic'].'.zip',$_GET['zippublic'],$GLOBALS['data_folder'].'/zipversions/');
+			rename ($_GET['zippublic'],$GLOBALS['public_data_folder'].'/'.$_GET['zippublic']); // on le remet à sa place
+			header("location: $zip_filename");
+		}
+	}
+
+
 
 function url_parts() {
 	$url_p['s']    = parse_url($GLOBALS['url'], PHP_URL_SCHEME); $url_p['s']   = (is_null($url_p['s'])) ? '' : $url_p['s'];
@@ -398,7 +412,6 @@ function absolutes_links(&$data) {
 	foreach($matches as $i => $link) {
 		$link[1] = trim($link[1]);
 		if (!preg_match('#^(([a-z]+://)|(\#))#', $link[1]) ) {
-
 			// absolute path w/o HTTP : add http.
 			if (preg_match('#^//#', $link[1])) {
 				$matches[$i][1] = $url_p['s'].':'.$link[1];
@@ -559,7 +572,8 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 				} else {
 					$titre = 'titre'; $url = '#'; $date = 'date inconnue';
 				}
-				echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";
+				echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="zip" href="?zippublic='.$liste_pages[$i].'"  title="Download zip version"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em>';
+				if (!$public){echo '<a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";}else{echo "</li>\n";}
 			}
 		}
 		echo '</ul>'."\n";
@@ -590,7 +604,7 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 					} else {
 						$titre = 'titre'; $url = '#'; $date = 'date inconnue';
 					}
-					echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a></li>'."\n";
+					echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="zip" href="?zipprivate='.$liste_pages[$i].'"  title="Download zip version"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="'.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a></li>'."\n";
 				}
 			}
 			echo '</ul>'."\n";
