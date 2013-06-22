@@ -136,18 +136,20 @@ if (!$public){
 			// récupère, parse, modifie & enregistre les fichier CSS (et les fichiés liés)
 			$n = 0;
 			$count = count($liste_css);
-			while ( $n < $count ) {
+			while ( $n < $count and $n <300) { // no more than 300 ext files.
 				$i = $n;
 				$file = $liste_css[$i];
 				if ($data = get_external_file($file['url_fichier'], 3) and ($data !== FALSE) ) {
 					if (preg_match('#(css|php|txt|html|xml|js)#', $file['url_fichier']) ) {
 						$matches_url = array();
-						preg_match_all('#url\s*\(("|\')?([^\'")]*)(\'|")?\)#i', $data, $matches_url, PREG_SET_ORDER);
+						preg_match_all('#url\s{0,}\(("|\')?([^\'")]{1,})(\'|")?\)#i', $data, $matches_url, PREG_SET_ORDER);
 						$matches_url2 = array();
-						preg_match_all('#@import\s*(url\()?["\']?([^\'"\(\);]*)["\']?\)?([^;]*);#i', $data, $matches_url2, PREG_SET_ORDER);
+						preg_match_all("#@import\s*(?:\"([^\">]*)\"?|'([^'>]*)'?)([^;]*)(;|$)#i", $data, $matches_url2, PREG_SET_ORDER);
+
 
 						$matches_url = array_merge($matches_url2, $matches_url);
 				
+
 						// pour chaque URL/URI
 						foreach ($matches_url as $j => $valuej) {
 
@@ -161,14 +163,22 @@ if (!$public){
 							if (preg_match('#^https?://#', $matches_url[$j][2])) {
 								$url_fichier = $matches_url[$j][2];
 							}
+							// abs url w/o protocole
+							elseif (preg_match('#^//#', $matches_url[$j][2])) {
+								$url_fichier = $url_p['s'].':'.$matches_url[$j][2];
+							}
+							// rel url
 							elseif (preg_match('#^/#', $matches_url[$j][2])) {
 								$url_fichier = $url_p['s'].'://'.$url_p['h'].$matches_url[$j][2];
 							}
+
 							else {
-								$url_fichier = substr($file['url_fichier'], 0, -strlen($file['nom_fich_origine'])).$matches_url[$j][2];
+								$endstr = ($w = strpos($file['url_fichier'], '?')) ? $w : strlen($file['url_fichier']);
+								$url_fichier = substr(substr($file['url_fichier'], 0, $endstr), 0, -strlen($file['nom_fich_origine'])).$matches_url[$j][2];
 							}
 							// new rand name, for local storage.
 							$nouveau_nom = rand_new_name($nom_fichier);
+							//echo '<pre>'.$nouveau_nom."\n";
 							$add = TRUE;
 
 							// avoids downloading the same file twice. (yes, we re-use the same $retrievable ($files), why not ?)
@@ -220,7 +230,7 @@ if (!$public){
 			$GLOBALS['done']['lien'] = $GLOBALS['target_folder'].'/';			
 		}
 
-	}
+	}//die;
 
 
 	// in case of delete an entry
@@ -376,6 +386,10 @@ function list_retrievable_data($url, &$data) {
 	foreach($matches as $i => $value) {
 		$matches_url = array();
 		preg_match_all('#url\s*\(("|\')?([^\'")]*)(\'|")?\)#i', $matches[$i][1], $matches_url, PREG_SET_ORDER);
+		$matches_url2 = array();
+		preg_match_all("#@import\s*(\"([^\">]*)\"?|'([^'>]*)'?)([^;]*)(;|$)#i", $matches[$i][1], $matches_url2, PREG_SET_ORDER);
+		$matches_url = array_merge($matches_url2, $matches_url);
+		//echo '<pre>';print_r($matches_url);die;
 
 		// pour chaque URL/URI
 		foreach ($matches_url as $j => $valuej) {
@@ -412,29 +426,50 @@ function absolutes_links(&$data) {
 	foreach($matches as $i => $link) {
 		$link[1] = trim($link[1]);
 		if (!preg_match('#^(([a-z]+://)|(\#))#', $link[1]) ) {
-			// absolute path w/o HTTP : add http.
-			if (preg_match('#^//#', $link[1])) {
-				$matches[$i][1] = $url_p['s'].':'.$link[1];
-			}
-			// absolute local path : add http://domainname.tld
-			elseif (preg_match('#^/#', $link[1])) {
-				$matches[$i][1] = $url_p['s'].'://'.$url_p['h'].$link[1];
-			}
-			// relative local path : add http://domainename.tld/path/
-			else {
-				$uuu = (strlen($url_p['file']) == 0 or preg_match('#/$#', $url_p['pat'])) ? $GLOBALS['url'] : substr($GLOBALS['url'], 0, -strlen($url_p['file'])) ;
-
-				$matches[$i][1] = $uuu.$link[1];
-			}
+			$matches[$i][1] = complete_url($link[1]);
 			$new_match = str_replace($matches[$i][2], $matches[$i][1], $matches[$i][0]);
 			$data = str_replace($matches[$i][0], $new_match, $data);
 		}
-
-
-
-
 	}
+}
 
+function complete_url($url) {
+	$home_p = url_parts();
+
+	$url = trim($url);
+	if ($url === '') {
+		return '';
+	}
+//	echo $url."\n\n\n";
+
+	$hash_pos = strrpos($url, '#');
+	$fragment = $hash_pos !== false ? '#' . substr($url, $hash_pos) : '';
+	$sep_pos  = strpos($url, '://');
+
+	if ($sep_pos === false || $sep_pos > 5) {
+		switch ($url{0}) {
+			// absolute path w/o HTTP and relatives paths
+			case '/':
+				$url = substr($url, 0, 2) === '//' ? $home_p['s'] . ':' . $url : $home_p['s'] . '://' . $home_p['h'] . $url;
+				break;
+			// php query string
+			case '?':
+				$url = $home_p['h'] . '/' . $home_p['file'] . $url;
+				break;
+			// html # particule
+			case '#':
+			// magnet & mailto
+			case 'm':
+			// javascript
+			case 'j':
+				break;
+			default:
+				$url = $home_p['h'] . '/' . $url;
+				break;
+		}
+	}
+//	echo $url."\n\n\n";
+	return $url;
 }
 
 function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $type) {
@@ -490,7 +525,12 @@ function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $
 
 	return $retrievable;
 }
-function rand_new_name($name) {return 'f_'.str_shuffle('abcd').mt_rand(100, 999).'--'.preg_replace('#[^\w.]#', '_', $name);}
+function rand_new_name($name) {
+	$name = substr($name, 0, (($w = strpos($name, '?')) ? $w : strlen($name)));
+	return 'f_'.str_shuffle('abcd').mt_rand(100, 999).'--'.preg_replace('#[^\w.]#', '_', substr($name, 15)).'.'.pathinfo($name, PATHINFO_EXTENSION);
+}
+
+
 if ($GLOBALS['done']['d'] !== FALSE) {
 	switch($GLOBALS['done']['d']) {
 		case 'ajout' :
@@ -560,8 +600,9 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 			if (is_dir($GLOBALS['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 				// each folder should contain such a file "index.ini".
 				$ini_file = $GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-				$favicon=glob($GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
-				if (!empty($favicon)){$favicon=$favicon[0];}
+				$favicon = glob($GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
+
+				$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 				if ( is_file($ini_file) and is_readable($ini_file) ) {
 					$infos = parse_ini_file($ini_file);
 				} else {
@@ -593,7 +634,7 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 					// each folder should contain such a file "index.ini".
 					$ini_file = $GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/index.ini';
 					$favicon=glob($GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
-					if (!empty($favicon)){$favicon=$favicon[0];}
+					$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 					if ( is_file($ini_file) and is_readable($ini_file) ) {
 						$infos = parse_ini_file($ini_file);
 					} else {
