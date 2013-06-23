@@ -655,7 +655,10 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 ?>
 	</aside>
 <footer>
-	<p style='float:left'><?php echo $bookmarklet; ?></p><p><a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <?php $GLOBALS['message'];?> - <a href='?public'>Public page link</a></p>
+		<p style='float:left'>
+			<?php echo $bookmarklet; ?></p><p><a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <?php $GLOBALS['message'];?> - <a href='?public'>Public page link</a>
+			<script id='flattrbtn'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=Broncowdd&button=compact&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=20;f.width=110;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('flattrbtn');</script>
+		</p>
 </footer>
 </body>
 </html>
