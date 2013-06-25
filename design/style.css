@@ -11,7 +11,7 @@ a:hover  {	color: #050;text-shadow:0 0 5px green;}
 a {	color: black;	text-decoration: none;}
 
 input{outline:none;-moz-border-radius: 5px;  -webkit-border-radius: 5px;  border-radius: 5px;    height:25px;padding : 3px ; vertical-align: bottom; margin-top : 3px ;}
-input[type=text]{width:80%;min-width:200px; background-color:rgba(255,255,255,0.8);border:1px solid #444;border-top-color:#333;border-bottom-color:#aaa; -moz-box-shadow: inset 0 1px 3px #000000; -webkit-box-shadow: inset 0 1px 3px #000000; box-shadow: inset 0 1px 3px #000000;   #000}
+input[type=text]{width:80%;min-width:200px; background-color:rgba(255,255,255,0.8);border:1px solid #444;border-top-color:#333;border-bottom-color:#aaa; -moz-box-shadow: inset 0 1px 3px #000000; -webkit-box-shadow: inset 0 1px 3px #000000; box-shadow: inset 0 1px 3px #000000; }
 input[type=text]:hover{background-color:rgba(200,255,200,0.8);-moz-box-shadow: inset 0 1px 3px #040; -webkit-box-shadow: inset 0 1px 3px #040; box-shadow: inset 0 1px 3px #040;   }
 input[type=text]:focus{background-color:rgba(200,255,200,0.9);-moz-box-shadow: inset 0 0 3px #040; -webkit-box-shadow: inset 0 0 3px #040; box-shadow: inset 0 0 3px #040;   }
 input[type=submit]{cursor: pointer;  border:1px solid #494;border-bottom-color:#272;border-top-color:#afa; background-color:rgba(0,200,0,0.8); -moz-box-shadow: 0 1px 2px #080; -webkit-box-shadow: 0 1px 2px #080; box-shadow: 0 1px 2px #080; -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=2, Direction=135, Color='#000')"; filter: progid:DXImageTransform.Microsoft.Shadow(Strength=2, Direction=135, Color='#000');  }
@@ -19,6 +19,7 @@ input[type=submit]:hover{ background-color:rgba(0,255,0,0.8);}
 input[type=submit]:active{border-color:black; background-color:rgba(0,255,0,0.8);}
 #____q{margin-top:20px;}
 header{
+	
 	-webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; 
 	border-bottom:1px solid #222;
 	-moz-box-shadow: 0 1px 3px #888; -webkit-box-shadow: 0 1px 3px #888; box-shadow: 0 1px 3px #888; -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=2, Direction=135, Color='#888')"; filter: progid:DXImageTransform.Microsoft.Shadow(Strength=2, Direction=135, Color='#888');   
@@ -31,7 +32,11 @@ header{
 	header nav{display:inline-block; vertical-align: top;}
 	header nav p{color:lightgreen;text-shadow: 0 1px 1px black;font-size:20px;}
 
+
+
+
 aside{height:100%;padding-bottom : 70px;text-align:center;}
+aside iframe{height:100%;border:none;}
 aside ul{padding:0;}
 aside li{margin:5px;list-style:none;vertical-align:middle;border-radius:3px;}
 aside .public li{background:rgba(100,255,100,0.2);}
@@ -55,3 +60,10 @@ footer	{text-align: right; color:#F80;text-shadow: 0 1px 1px black; position:fix
 	footer a {color:lightgreen;text-shadow:0 1px 1px green;}
 	footer a:hover {color:white;}
 
+body.iframe aside{padding-bottom:0!important;}
+body.iframe header {padding:2px;vertical-align: top;}
+body.iframe header img{width:32px;height:auto;}
+body.iframe header input{vertical-align: top;}
+body.iframe header #____q{margin-top:2px;}
+body.iframe header nav{margin-top:2px;display:inline-block; vertical-align: top;}
+body.iframe header nav p{margin:0;padding:0;}
