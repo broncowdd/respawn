@@ -581,7 +581,7 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 		
 	</head>
 <body <?php echo $bodyclass;?>>
-	<header><a href="<?php echo $_SERVER['PHP_SELF'];?>"><img src="design/logo2.png"/></a>
+	<header><a href="<?php echo $_SERVER['PHP_SELF'];if ($public){echo '?public'; }?>"><img src="design/logo2.png"/></a>
 		<nav id="orpx_nav-bar">
 		<?php 
 			if (!$public){
@@ -640,7 +640,7 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 					}
 					echo "\t".'<li>';
 					if (!$public){echo '<a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a>';}
-					echo '<a class="zip" href="?zippublic='.$liste_pages[$i].'"  title="Download zip version"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="?publicget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em>';
+					echo '<a class="zip" href="?zippublic='.$liste_pages[$i].'"  title="Download zip version"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="?public&publicget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em>';
 					if (!$public){echo '<a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";}else{echo "</li>\n";}
 				}
 			}

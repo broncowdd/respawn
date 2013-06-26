@@ -7,7 +7,7 @@
 	input[type=checkbox]+label{display:inline;width:auto;cursor:pointer;}
 	input[type=checkbox]{display:inline;width:auto;}
 	input{border-radius:3px;width:100%;}
-
+	a.public{font-size:24px;color:#0F0;text-shadow: 0 1px 1px darkgreen;text-decoration:none;}
 	#login, #pass{border:1px solid #999;padding:3px;}
 	#login:focus{text-shadow:0 0 3px green;}
 	#pass:focus{text-shadow:0 0 3px red;}
@@ -38,4 +38,5 @@
 		<hr/>
 		<input type='submit' value='Connexion'/>	
 	</form>
+	<a class="public" href="<?php echo $_SERVER['PHP_SELF'].'?public';?>" alt="link to public">> Page publique <</a>
 </div>
