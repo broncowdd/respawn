@@ -1,9 +1,10 @@
 <?php
-if (isset($_GET['public'])){$public=true;$bodyclass='publicpage';}else{$bodyclass='';$public=false;include 'auto_restrict.php';}
+if (isset($_GET['public'])){$publicarg='?public';$public=true;$bodyclass='publicpage';}else{$publicarg='';$bodyclass='';$public=false;include 'auto_restrict.php';}
 function aff($a,$stop=true){echo 'Arret a la ligne '.__LINE__.' du fichier '.__FILE__.'<pre>';var_dump($a);echo '</pre>';if ($stop){exit();}}
 function BodyClasses($add=''){$regex='#(msie)[/ ]([0-9])+|(firefox)/([0-9])+|(chrome)/([0-9])+|(opera)/([0-9]+)|(safari)/([0-9]+)|(android)|(iphone)|(ipad)|(blackberry)|(Windows Phone)|(symbian)|(mobile)|(bada])#i';@preg_match($regex,$_SERVER['HTTP_USER_AGENT'],$resultat);return ' class="'.$add.' '.@preg_replace('#([a-zA-Z ]+)[ /]([0-9]+)#','$1 $1$2',$resultat[0]).' '.basename($_SERVER['PHP_SELF'],'.php').'" ';}
 function title2filename($chaine){$a=array(' ',':','|','#','/','\\','$','*','?','&','<','>');return substr(stripAccents(str_replace($a,'_',$chaine)),0,30);}
 function stripAccents($string){	$a=explode(' ','à á â ã ä ç è é ê ë ì í î ï ñ ò ó ô õ ö ù ú û ü ý ÿ À Á Â Ã Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Õ Ö Ù Ú Û Ü Ý');$b=explode(' ','a a a a a c e e e e i i i i n o o o o o u u u u y y A A A A A C E E E E I I I I N O O O O O U U U U Y');return str_replace($a,$b,$string);}
+
 if(isset($_GET['publicget'])||isset($_GET['privateget'])){$bodyclass.=' iframe';}
 $bodyclass=bodyclasses($bodyclass);$target='';
 
@@ -35,7 +36,7 @@ $GLOBALS['data_folder'] = 'mypersonaldata';
 $GLOBALS['private_data_folder'] = $GLOBALS['data_folder'].'/private';
 $GLOBALS['public_data_folder'] =  $GLOBALS['data_folder'].'/public';
 $GLOBALS['default_data_folder'] =  $GLOBALS['public_data_folder'];
-$GLOBAL['version']='1.2';
+$GLOBAL['version']='1.3';
 $GLOBALS['message'] = 'Votre webliothèque perso';
 $GLOBALS['public_title'] = 'Voici la webliothèque publique de Bronco';
 $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:javascript:(function(){var url = location.href;window.open("http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].'?q="+ encodeURIComponent(url),"_blank","menubar=yes,height=600,width=1000,toolbar=yes,scrollbars=yes,status=yes");})();\' >Bookmarklet</a>';
@@ -93,138 +94,148 @@ if (!$public){
 			else {
 				$GLOBALS['target_folder'] = $GLOBALS['default_data_folder'].'/'.$new_folder;
 			}
-			$liste_css = array();
-			// parse le fichier principal à la recherche de données à télécharger
-			$files = list_retrievable_data($GLOBALS['url'], $GLOBALS['main_page_data']);
-			// les récupère et les enregistre.
-			//echo '<pre>';print_r($files);die();
-			foreach ($files as $i => $file) {
-				if ($data = get_external_file($file['url_fichier'], 3) and ($data !== FALSE) ) {
-					// CSS files need to be parsed aswell
-					if ($file['type'] == 'css') {
-						$liste_css[] = $file;
-					}
-					else {
-						file_put_contents($GLOBALS['target_folder'].'/'.$file['nom_destination'], $data);
+
+			/*GESTION DU PDF ICI*/
+			if (strtolower(substr($_GET['q'],-4))=='.pdf'){
+				$title=basename($_GET['q']);
+				file_put_contents($GLOBALS['target_folder'].'/'.$title,$GLOBALS['main_page_data']);
+				file_put_contents($GLOBALS['target_folder'].'/index.php','<?php header("location: '.$title.'");?>');
+			}else{
+
+
+				$liste_css = array();
+				// parse le fichier principal à la recherche de données à télécharger
+				$files = list_retrievable_data($GLOBALS['url'], $GLOBALS['main_page_data']);
+				// les récupère et les enregistre.
+				//echo '<pre>';print_r($files);die();
+				foreach ($files as $i => $file) {
+					if ($data = get_external_file($file['url_fichier'], 3) and ($data !== FALSE) ) {
+						// CSS files need to be parsed aswell
+						if ($file['type'] == 'css') {
+							$liste_css[] = $file;
+						}
+						else {
+							file_put_contents($GLOBALS['target_folder'].'/'.$file['nom_destination'], $data);
+						}
 					}
 				}
-			}
-			// remplace juste les liens <a href=""> relatifs vers des liens absolus
-			absolutes_links($GLOBALS['main_page_data']);
+				// remplace juste les liens <a href=""> relatifs vers des liens absolus
+				absolutes_links($GLOBALS['main_page_data']);
 
-			// enregistre le fichier HTML principal
-			file_put_contents($GLOBALS['target_folder'].'/'.'index.html', $GLOBALS['main_page_data']);
+				// enregistre le fichier HTML principal
+				file_put_contents($GLOBALS['target_folder'].'/'.'index.html', $GLOBALS['main_page_data']);
 
-			// récupère le titre de la page
-			// cherche le charset spécifié dans le code HTML.
-			// récupère la balise méta tout entière, dans $meta
-			preg_match('#<meta .*charset=.*>#Usi', $GLOBALS['main_page_data'], $meta);
+				// récupère le titre de la page
+				// cherche le charset spécifié dans le code HTML.
+				// récupère la balise méta tout entière, dans $meta
+				preg_match('#<meta .*charset=.*>#Usi', $GLOBALS['main_page_data'], $meta);
 
-			// si la balise a été trouvée, on tente d’isoler l’encodage.
-			if (!empty($meta[0])) {
-				// récupère juste l’encodage utilisé, dans $enc
-				preg_match('#charset="?(.*)"#si', $meta[0], $enc);
-				// regarde si le charset a été trouvé, sinon le fixe à UTF-8
-				$html_charset = (!empty($enc[1])) ? strtolower($enc[1]) : 'utf-8';
-			} else { $html_charset = 'utf-8'; }
-			// récupère le titre, dans le tableau $titles, rempli par preg_match()
-			preg_match('#<title>(.*)</title>#Usi', $GLOBALS['main_page_data'], $titles);
-			if (!empty($titles[1])) {
-				$html_title = trim($titles[1]);
-				// ré-encode le titre en UTF-8 en fonction de son encodage.
-				$title = ($html_charset == 'iso-8859-1') ? utf8_encode($html_title) : $html_title;
-			// si pas de titre : on utilise l’URL.
-			} else {
-				$title = $url;
-			}
-
-
-			// récupère, parse, modifie & enregistre les fichier CSS (et les fichiés liés)
-			$n = 0;
-			$count = count($liste_css);
-			while ( $n < $count and $n <300) { // no more than 300 ext files.
-				$i = $n;
-				$file = $liste_css[$i];
-				if ($data = get_external_file($file['url_fichier'], 3) and ($data !== FALSE) ) {
-					if (preg_match('#(css|php|txt|html|xml|js)#', $file['url_fichier']) ) {
-						$matches_url = array();
-						preg_match_all('#url\s{0,}\(("|\')?([^\'")]{1,})(\'|")?\)#i', $data, $matches_url, PREG_SET_ORDER);
-						$matches_url2 = array();
-						preg_match_all("#@import\s*(?:\"([^\">]*)\"?|'([^'>]*)'?)([^;]*)(;|$)#i", $data, $matches_url2, PREG_SET_ORDER);
+				// si la balise a été trouvée, on tente d’isoler l’encodage.
+				if (!empty($meta[0])) {
+					// récupère juste l’encodage utilisé, dans $enc
+					preg_match('#charset="?(.*)"#si', $meta[0], $enc);
+					// regarde si le charset a été trouvé, sinon le fixe à UTF-8
+					$html_charset = (!empty($enc[1])) ? strtolower($enc[1]) : 'utf-8';
+				} else { $html_charset = 'utf-8'; }
+				// récupère le titre, dans le tableau $titles, rempli par preg_match()
+				preg_match('#<title>(.*)</title>#Usi', $GLOBALS['main_page_data'], $titles);
+				if (!empty($titles[1])) {
+					$html_title = trim($titles[1]);
+					// ré-encode le titre en UTF-8 en fonction de son encodage.
+					$title = ($html_charset == 'iso-8859-1') ? utf8_encode($html_title) : $html_title;
+				// si pas de titre : on utilise l’URL.
+				} else {
+					$title = $url;
+				}
 
 
-						$matches_url = array_merge($matches_url2, $matches_url);
-				
+				// récupère, parse, modifie & enregistre les fichier CSS (et les fichiés liés)
+				$n = 0;
+				$count = count($liste_css);
+				while ( $n < $count and $n <300) { // no more than 300 ext files.
+					$i = $n;
+					$file = $liste_css[$i];
+					if ($data = get_external_file($file['url_fichier'], 3) and ($data !== FALSE) ) {
+						if (preg_match('#(css|php|txt|html|xml|js)#', $file['url_fichier']) ) {
+							$matches_url = array();
+							preg_match_all('#url\s{0,}\(("|\')?([^\'")]{1,})(\'|")?\)#i', $data, $matches_url, PREG_SET_ORDER);
+							$matches_url2 = array();
+							preg_match_all("#@import\s*(?:\"([^\">]*)\"?|'([^'>]*)'?)([^;]*)(;|$)#i", $data, $matches_url2, PREG_SET_ORDER);
 
-						// pour chaque URL/URI
-						foreach ($matches_url as $j => $valuej) {
 
-							if (preg_match('#^data:#', $matches_url[$j][2])) break; // if BASE64 data, dont download.
+							$matches_url = array_merge($matches_url2, $matches_url);
+					
 
-							// get the filenam (basename)
-							$nom_fichier = (preg_match('#^(ht|f)tps?://#', $matches_url[$j][2])) ? pathinfo(parse_url($matches_url[$j][2], PHP_URL_PATH), PATHINFO_BASENAME) : pathinfo($matches_url[$j][2], PATHINFO_BASENAME);
+							// pour chaque URL/URI
+							foreach ($matches_url as $j => $valuej) {
 
-							// get the URL. For URIs, uses the GLOBALS[url] tu make the URL
-							// the files in CSS are relative to the CSS !
-							if (preg_match('#^https?://#', $matches_url[$j][2])) {
-								$url_fichier = $matches_url[$j][2];
-							}
-							// abs url w/o protocole
-							elseif (preg_match('#^//#', $matches_url[$j][2])) {
-								$url_fichier = $url_p['s'].':'.$matches_url[$j][2];
-							}
-							// rel url
-							elseif (preg_match('#^/#', $matches_url[$j][2])) {
-								$url_fichier = $url_p['s'].'://'.$url_p['h'].$matches_url[$j][2];
-							}
+								if (preg_match('#^data:#', $matches_url[$j][2])) break; // if BASE64 data, dont download.
 
-							else {
-								$endstr = ($w = strpos($file['url_fichier'], '?')) ? $w : strlen($file['url_fichier']);
-								$url_fichier = substr(substr($file['url_fichier'], 0, $endstr), 0, -strlen($file['nom_fich_origine'])).$matches_url[$j][2];
-							}
-							// new rand name, for local storage.
-							$nouveau_nom = rand_new_name($nom_fichier);
-							//echo '<pre>'.$nouveau_nom."\n";
-							$add = TRUE;
+								// get the filenam (basename)
+								$nom_fichier = (preg_match('#^(ht|f)tps?://#', $matches_url[$j][2])) ? pathinfo(parse_url($matches_url[$j][2], PHP_URL_PATH), PATHINFO_BASENAME) : pathinfo($matches_url[$j][2], PATHINFO_BASENAME);
 
-							// avoids downloading the same file twice. (yes, we re-use the same $retrievable ($files), why not ?)
-							foreach ($files as $key => $item) {
-								if ($item['url_fichier'] == $url_fichier) {
-									$nouveau_nom = $item['nom_destination'];
-									$add = FALSE;
-									break;
+								// get the URL. For URIs, uses the GLOBALS[url] tu make the URL
+								// the files in CSS are relative to the CSS !
+								if (preg_match('#^https?://#', $matches_url[$j][2])) {
+									$url_fichier = $matches_url[$j][2];
 								}
-							}
+								// abs url w/o protocole
+								elseif (preg_match('#^//#', $matches_url[$j][2])) {
+									$url_fichier = $url_p['s'].':'.$matches_url[$j][2];
+								}
+								// rel url
+								elseif (preg_match('#^/#', $matches_url[$j][2])) {
+									$url_fichier = $url_p['s'].'://'.$url_p['h'].$matches_url[$j][2];
+								}
 
-							// if we do download, add it to the array.
-							if ($add === TRUE) {
-								$files_n = array(
-									'url_origine' => $matches_url[$j][2],
-									'url_fichier' => $url_fichier,
-									'nom_fich_origine' => $nom_fichier,
-									'nom_destination' => $nouveau_nom
-									);
-								$files[] = $files_n;
-								$liste_css[] = $files_n;
-							}
+								else {
+									$endstr = ($w = strpos($file['url_fichier'], '?')) ? $w : strlen($file['url_fichier']);
+									$url_fichier = substr(substr($file['url_fichier'], 0, $endstr), 0, -strlen($file['nom_fich_origine'])).$matches_url[$j][2];
+								}
+								// new rand name, for local storage.
+								$nouveau_nom = rand_new_name($nom_fichier);
+								//echo '<pre>'.$nouveau_nom."\n";
+								$add = TRUE;
 
-							// replace url in CSS $data
-							$data = str_replace($matches_url[$j][2], $nouveau_nom, $data);
-							// echo $nouveau_nom."<br>\n";
+								// avoids downloading the same file twice. (yes, we re-use the same $retrievable ($files), why not ?)
+								foreach ($files as $key => $item) {
+									if ($item['url_fichier'] == $url_fichier) {
+										$nouveau_nom = $item['nom_destination'];
+										$add = FALSE;
+										break;
+									}
+								}
 
-							if (!preg_match('#(css|php|txt|html)#', $file['url_fichier']) ) {
-								if (FALSE !== ($f = get_external_file($url_fichier, 3)) ) {
-									file_put_contents($GLOBALS['target_folder'].'/'.$nouveau_nom, $f);
+								// if we do download, add it to the array.
+								if ($add === TRUE) {
+									$files_n = array(
+										'url_origine' => $matches_url[$j][2],
+										'url_fichier' => $url_fichier,
+										'nom_fich_origine' => $nom_fichier,
+										'nom_destination' => $nouveau_nom
+										);
+									$files[] = $files_n;
+									$liste_css[] = $files_n;
+								}
+
+								// replace url in CSS $data
+								$data = str_replace($matches_url[$j][2], $nouveau_nom, $data);
+								// echo $nouveau_nom."<br>\n";
+
+								if (!preg_match('#(css|php|txt|html)#', $file['url_fichier']) ) {
+									if (FALSE !== ($f = get_external_file($url_fichier, 3)) ) {
+										file_put_contents($GLOBALS['target_folder'].'/'.$nouveau_nom, $f);
+									}
 								}
 							}
 						}
-					}
 
-					// don't forget to save data
-					file_put_contents($GLOBALS['target_folder'].'/'.$file['nom_destination'], $data);
+						// don't forget to save data
+						file_put_contents($GLOBALS['target_folder'].'/'.$file['nom_destination'], $data);
+					}
+					$n++;
+					$count = count($liste_css);
 				}
-				$n++;
-				$count = count($liste_css);
 			}
 			// enregistre un fichier d’informations concernant la page (date, url, titre)
 			$info  = '';
@@ -232,11 +243,11 @@ if (!$public){
 			$info .= 'TITLE="'.$title.'"'."\n";
 			$info .= 'DATE="'.time().'"'."\n";
 			file_put_contents($GLOBALS['target_folder'].'/'.'index.ini', $info);
-			$GLOBALS['done']['d'] = 'ajout';			
-			$GLOBALS['done']['lien'] = $GLOBALS['target_folder'].'/';	
-
+			/*$GLOBALS['done']['d'] = 'ajout';			
+			$GLOBALS['done']['lien'] = $GLOBALS['target_folder'].'/';	*/
+			
 		}
-
+		
 	}//die;
 
 
@@ -581,7 +592,7 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 		
 	</head>
 <body <?php echo $bodyclass;?>>
-	<header><a href="<?php echo $_SERVER['PHP_SELF'];if ($public){echo '?public'; }?>"><img src="design/logo2.png"/></a>
+	<header><a href="<?php echo $_SERVER['PHP_SELF'].$publicarg; ?>"><img src="design/logo2.png"/></a>
 		<nav id="orpx_nav-bar">
 		<?php 
 			if (!$public){
