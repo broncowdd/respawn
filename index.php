@@ -607,7 +607,7 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 	<aside>
 	<?php
 	if (!empty($target)){
-		echo '<iframe src="'.$target.'" width="100%"></iframe>';
+		echo '<iframe name="embed" style="min-height: 800px;" src="'.$target.'" width="100%" height="100%" scrolling="auto" frameborder="0" allowtransparency="true" ></iframe>';
 	}else{
 		if (!$public){
 			if (isset($_GET['done']) and $_GET['done'] !== FALSE) {
