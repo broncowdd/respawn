@@ -6,7 +6,7 @@ body {
 	margin:0;padding:0;
 	font-family: Georgia, Serif;font-size : 16px; color: #050;
 }
-a:hover  {	color: #050;text-shadow:0 0 5px green;}
+a:hover  {	color: #050;text-shadow:0 0 3px green;}
 
 a {	color: black;	text-decoration: none;}
 
@@ -29,34 +29,51 @@ header{
 	background-image: -moz-linear-gradient( top, #555, #333); background-image: -ms-linear-gradient( top, #555, #333); 
 	background-image: -o-linear-gradient( top, #555, #333); background-image: -webkit-gradient(linear, center top, center bottom, from(#555), to(#333)); background-image: -webkit-linear-gradient( top, #555, #333); background-image: linear-gradient( top, #555, #333);   
 }
-	header nav{display:inline-block; vertical-align: top;}
-	header nav p{color:lightgreen;text-shadow: 0 1px 1px black;font-size:20px;}
-
+header nav{display:inline-block; vertical-align: top;}
+header nav .zip{width:16px;height:16px; display:inline-block;background:url(zip.png) no-repeat;}
+header nav p{color:lightgreen;text-shadow: 0 1px 1px black;font-size:20px;}
+header nav .tag_public{display:inline-block;padding:5px;color:green;text-shadow: 0 1px 1px black;}
+header nav .tag_public:hover{color:lightgreen;}
+header nav .tag_private{display:inline-block;padding:5px;color:red;text-shadow: 0 1px 1px black;}
+header nav .tag_private:hover{color:pink;}
 
 
 
 aside{height:100%;padding-bottom : 70px;text-align:center;}
 aside iframe{height:100%;border:none;}
 aside ul{padding:0;}
-aside li{margin:5px;list-style:none;vertical-align:middle;border-radius:3px;}
+aside li{margin:5px;list-style:none;vertical-align:middle;border-radius:3px;overflow-x:hidden;}
+aside li .tag{font-size:10px;display:inline-block;padding:2px;border-radius:3px;}
+aside .public li .tag{background:rgba(100,255,100,0.4);color:green;}
+aside .public li .tag:hover{background:rgba(100,255,100,0.9);color:darkgreen;}
+aside .private li .tag{background:rgba(255,100,100,0.4);color:red;}
+aside .private li .tag:hover{background:rgba(255,100,100,0.9);color:darkred;text-shadow:0 0 3px red;}
+
+
 aside .public li{background:rgba(100,255,100,0.2);}
 aside .private li{background:rgba(255,100,100,0.2);}
 aside .public {background:rgba(100,255,100,0.2);}
 aside .private {background:rgba(255,100,100,0.2);} 
 aside li em {font-size:10px ; color:#484;}
+aside li.private em { color:#844;}
 aside li img {vertical-align:bottom;margin:1px;width:16px;height:16px;}
-aside li a.suppr, aside li a.origine, aside li a.zip{opacity:0.5;width:16px;height:16px;display:inline-block;background:url(actions.png) no-repeat  0 -159px ;}
+aside li a.suppr,aside li a.rename,aside li a.origine, aside li a.zip, aside li a.tagme{opacity:0.5;width:16px;height:16px;display:inline-block;background:url(actions.png) no-repeat  0 -159px ;}
 aside li a.origine{background-position: 0 -396px ;}
 aside li a.zip{background-position: 0 2px ;}
-aside li a.suppr:hover,aside li a.origine:hover,aside li a.zip:hover{opacity:1;}
+aside li a.tagme{background-position: 0 -63px ;}
+aside li a.rename{background-position: 0 -30px ;}
+aside li a.tagme:hover,aside li a.rename:hover,aside li a.suppr:hover,aside li a.origine:hover,aside li a.zip:hover{opacity:1;}
 aside li a.toprivate,aside li a.topublic{float:right;margin-right:5px;opacity:0.5;}
 aside li a.toprivate:hover,aside li a.topublic:hover{opacity:1;}
 
 aside .public,.private{min-width:300px;text-align:left;vertical-align:top; margin-top:25px;padding:10px; border-radius:5px; border:1px dashed;display:inline-block;}
 aside .public{border-color:green;}
 aside .private{border-color:red;}
-footer	{text-align: right; color:#F80;text-shadow: 0 1px 1px black; position:fixed;bottom:0;left:0;right:0;height:auto;min-height:20px;padding : 5px ; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; border-top:1px solid #888;-moz-box-shadow: 0 0px 9px #000; -webkit-box-shadow: 0 0px 9px #000; box-shadow: 0 0px 9px #000; -ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=9, Direction=135, Color='#000')"; filter: progid:DXImageTransform.Microsoft.Shadow(Strength=9, Direction=135, Color='#000');   filter: progid:DXImageTransform.Microsoft.gradient(GradientType = 1, startColorstr = #555, endColorstr = #333); -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType = 1, startColorstr = #555, endColorstr = #333)"; background-image: -moz-linear-gradient( top, #555, #333); background-image: -ms-linear-gradient( top, #555, #333); background-image: -o-linear-gradient( top, #555, #333); background-image: -webkit-gradient(linear, center top, center bottom, from(#555), to(#333)); background-image: -webkit-linear-gradient( top, #555, #333); background-image: linear-gradient( top, #555, #333);   }
-	footer p {margin:0;padding:0;color:lightgreen;text-shadow:0 1px 1px green;}
+footer	{
+	font-size:10px;text-align: right; color:lightgreen;text-shadow: 0 1px 1px black; position:fixed; line-height:15px;
+	bottom:0;left:0;right:0;height:auto;min-height:15px;padding-right : 5px ; -webkit-touch-callout: none; -webkit-user-select: none; -khtml-user-select: none; -moz-user-select: none; -ms-user-select: none; user-select: none; 
+	border-top:1px solid #888;-moz-box-shadow: 0 0px 9px #000; -webkit-box-shadow: 0 0px 9px #000; box-shadow: 0 0px 9px #000; 
+	-ms-filter: "progid:DXImageTransform.Microsoft.Shadow(Strength=9, Direction=135, Color='#000')"; filter: progid:DXImageTransform.Microsoft.Shadow(Strength=9, Direction=135, Color='#000');   filter: progid:DXImageTransform.Microsoft.gradient(GradientType = 1, startColorstr = #555, endColorstr = #333); -ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType = 1, startColorstr = #555, endColorstr = #333)"; background-image: -moz-linear-gradient( top, #555, #333); background-image: -ms-linear-gradient( top, #555, #333); background-image: -o-linear-gradient( top, #555, #333); background-image: -webkit-gradient(linear, center top, center bottom, from(#555), to(#333)); background-image: -webkit-linear-gradient( top, #555, #333); background-image: linear-gradient( top, #555, #333);   }
 	footer a {color:lightgreen;text-shadow:0 1px 1px green;}
 	footer a:hover {color:white;}
 

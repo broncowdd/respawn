@@ -1,10 +1,112 @@
 <?php
-if (isset($_GET['public'])){$publicarg='?public';$public=true;$bodyclass='publicpage';}else{$publicarg='';$bodyclass='';$public=false;include 'auto_restrict.php';}
+// liste des parametres GET autorisés pour l'accès public
+if (isset($_GET['public'])
+	||isset($_GET['zippublic'])
+	||isset($_GET['rss'])
+	||isset($_GET['publicget'])
+	||isset($_GET['api']))
+	{$publicarg='?public';$GLOBAL['public']=true;$bodyclass='publicpage';}
+else{$publicarg='';$bodyclass='';$GLOBAL['public']=false;include 'auto_restrict.php';}
+if (isset($_GET['tag'])){$search_tags=strip_tags($_GET['tag']);}else{$search_tags='';}
+// Fonctions
 function aff($a,$stop=true){echo 'Arret a la ligne '.__LINE__.' du fichier '.__FILE__.'<pre>';var_dump($a);echo '</pre>';if ($stop){exit();}}
 function BodyClasses($add=''){$regex='#(msie)[/ ]([0-9])+|(firefox)/([0-9])+|(chrome)/([0-9])+|(opera)/([0-9]+)|(safari)/([0-9]+)|(android)|(iphone)|(ipad)|(blackberry)|(Windows Phone)|(symbian)|(mobile)|(bada])#i';@preg_match($regex,$_SERVER['HTTP_USER_AGENT'],$resultat);return ' class="'.$add.' '.@preg_replace('#([a-zA-Z ]+)[ /]([0-9]+)#','$1 $1$2',$resultat[0]).' '.basename($_SERVER['PHP_SELF'],'.php').'" ';}
 function title2filename($chaine){$a=array(' ',':','|','#','/','\\','$','*','?','&','<','>');return substr(stripAccents(str_replace($a,'_',$chaine)),0,30);}
 function stripAccents($string){	$a=explode(' ','à á â ã ä ç è é ê ë ì í î ï ñ ò ó ô õ ö ù ú û ü ý ÿ À Á Â Ã Ä Ç È É Ê Ë Ì Í Î Ï Ñ Ò Ó Ô Õ Ö Ù Ú Û Ü Ý');$b=explode(' ','a a a a a c e e e e i i i i n o o o o o u u u u y y A A A A A C E E E E I I I I N O O O O O U U U U Y');return str_replace($a,$b,$string);}
+function returncurrenturl(){$domaine=dirname($_SERVER['SERVER_PROTOCOL']) . "://" . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'] ;$domaine=explode('?',$domaine);return $domaine[0];}
+function store($file,$datas){file_put_contents($file,serialize($datas));}
+function unstore($file){ return unserialize(file_get_contents($file));}
+function search($public='public',$tag=false){
+	global $GLOBAL;
+	//$GLOBAL['tag_array'];
+	if (!$tag){return scandir($GLOBAL[$public.'_data_folder'] );}
+	else{
+		foreach ($GLOBAL['tag_array'][$public] as $key=>$val){
+			if (stripos($val,$tag)!==false){$result[]=$key;}
+		}
+		if (!empty($result)){return $result;}else{return array();}
+	}
+}
+function array2feed($array=null){
+	// more infos on this function at https://github.com/broncowdd/feed2array
+	if (!$array){return false;}
+	if (empty($array['infos']['type'])){$array['infos']['type']='rss';}else{$array['infos']['type']=strtolower($array['infos']['type']);}
+	if (empty($array['infos']['description'])){$array['infos']['description']='';}
+	$r="\n";$t="\t";
+	$tpl=array('rss'=>array(),'atom'=>array());
+	$tpl['rss']['header']='<?xml version="1.0" encoding="utf-8" ?>'.$r.'<rss version="2.0"  xmlns:content="http://purl.org/rss/1.0/modules/content/">'.$r.$t.'<channel>'.$r;
+	$tpl['atom']['header']='<feed xmlns="http://www.w3.org/2005/Atom">'.$r;
+	$tpl['rss']['footer']=$t.'</channel></rss>'.$r;
+	$tpl['atom']['footer']='</feed>'.$r;
+	$tpl['rss']['content-type']='Content-Type: application/rss+xml';
+	$tpl['atom']['content-type']='Content-Type: application/atom+xml;charset=utf-8';
+	header($tpl[$array['infos']['type']]['content-type']);
+	$feed=$tpl[$array['infos']['type']]['header'];
+		//create the feed's info content
+		foreach($array['infos'] as $key=>$value){
+			if ($array['infos']['type']=='atom'){ // ATOM
+				if ($key=='link'){$feed.=$t.$t.'<link href="'.$value.'" rel="self" type="application/atom+xml"/>'.$r;}
+				elseif ($key=='author'){$feed.=$t.$t.'<author><name>'.$value.'</name></author>'.$r;}
+				elseif ($key=='licence'){$feed.=$t.$t.'<'.$key.' href="'.$value.'" rel="license"/>'.$r;} // in atom feed, licence is the link to the licence type
+				elseif ($key!='version'&&$key!='type'){$feed.=$t.$t.'<'.$key.'>'.$value.'</'.$key.'>'.$r;}
+			}else{ // RSS
+				if ($key!='version'&&$key!='type'){$feed.=$t.$t.'<'.$key.'>'.$value.'</'.$key.'>'.$r;}
+			}
+		}
 
+		//then the items content
+		foreach ($array['items'] as $item){
+			if ($array['infos']['type']=='atom'){ $feed.=$t.$t.$t.'<entry>'.$r;}else{$feed.=$t.$t.$t.'<item>'.$r;}
+				foreach($item as $key=>$value){
+					if ($array['infos']['type']=='atom'){ // ATOM
+						if ($key=='link'){$feed.=$t.$t.$t.$t.'<link href="'.$value.'" rel="alternate" type="text/html"/>'.$r;}
+						elseif ($key=='content'){$feed.=$t.$t.$t.$t.'<content type="text">'.htmlspecialchars($value).'</content>'.$r;}
+						else{$feed.=$t.$t.$t.$t.'<'.$key.'>'.$value.'</'.$key.'>'.$r;}
+					}else{ // RSS
+						if ($key=='date'||$key=='pubDate'||$key=='title'||$key=='link'){$feed.=$t.$t.$t.$t.'<'.$key.'>'.htmlspecialchars($value).'</'.$key.'>'.$r;}
+						elseif($key=='guid'){ $feed.=$t.$t.$t.$t.'<guid isPermaLink="false">'.$value.'</guid>'.$r;}
+						else{$feed.=$t.$t.$t.$t.'<'.$key.'><![CDATA['.$value.']]></'.$key.'>'.$r;}
+					}
+				}
+			if ($array['infos']['type']=='atom'){ $feed.=$t.$t.$t.'</entry>'.$r;}else{$feed.=$t.$t.$t.'</item>'.$r;}
+		}
+
+
+	$feed.=$tpl[$array['infos']['type']]['footer'];
+	return $feed;
+}
+function tagcloud(){
+	global $GLOBAL;
+	$array=array();
+	if (!$GLOBAL['public']){
+		foreach ($GLOBAL['tag_array']['private'] as $key=>$tag){
+			$tags=explode(' ',$tag);
+			foreach ($tags as $t){
+				if (!isset($array[$t]['nb'])){$array[$t]['nb']=1;}else{$array[$t]['nb']++;}
+				if (!isset($array[$t]['status'])){$array[$t]['status']='private';}
+			}
+		}
+	}
+	foreach ($GLOBAL['tag_array']['public'] as $key=>$tag){
+		$tags=explode(' ',$tag);
+		foreach ($tags as $t){
+			if (!isset($array[$t]['nb'])){$array[$t]['nb']=1;}else{$array[$t]['nb']++;}
+			if (!isset($array[$t]['status'])){$array[$t]['status']='public';}
+		}
+	}
+
+	foreach ($array as $tag=>$val){
+		echo '<a class="tag_'.$val['status'].'" href="'.$GLOBAL['respawn_url'].'?tag='.$tag.'">'.$tag.' <em>'.$val['nb'].'</em></a>';
+	}
+}
+function tag2links($tagstring){
+	global $GLOBAL;
+	$array=explode(' ',$tagstring);$links='';
+	foreach ($array as $tag){
+		$links.='<a href="'.$GLOBAL['respawn_url'].'?tag='.$tag.'" class="tag">'.$tag.'</a>';
+	}
+	return $links;
+}
 if(isset($_GET['publicget'])||isset($_GET['privateget'])){$bodyclass.=' iframe';}
 $bodyclass=bodyclasses($bodyclass);$target='';
 
@@ -22,9 +124,9 @@ $bodyclass=bodyclasses($bodyclass);$target='';
  *
  */
 
-/* all the enhancements (logo, css, session lock, bookmarklet) are from Bronco (www.warriordudimanche.net) 
-* and are based on the same licence ;)
-* thanks a lot to Timo for his great job on this app ;) */
+/* all the enhancements (logo, css, session lock, bookmarklet, tags, rss feed, api) are from Bronco (www.warriordudimanche.net) 
+*  and are based on the same licence ;)
+*  thanks a lot to Timo for his great job on this app ;) */
 
 // PHP 5.1.2 minimum required
 
@@ -32,20 +134,27 @@ error_reporting(-1);
 date_default_timezone_set('UTC');
 // CONFIGURABLE OPTIONS
 // change those directories'names for more security
-$GLOBALS['data_folder'] = 'mypersonaldata'; 
-$GLOBALS['private_data_folder'] = $GLOBALS['data_folder'].'/private';
-$GLOBALS['public_data_folder'] =  $GLOBALS['data_folder'].'/public';
-$GLOBALS['default_data_folder'] =  $GLOBALS['public_data_folder'];
-$GLOBAL['version']='1.3';
-$GLOBALS['message'] = 'Votre webliothèque perso';
-$GLOBALS['public_title'] = 'Voici la webliothèque publique de Bronco';
+$GLOBAL['data_folder'] = 'mypersonaldata'; 
+$GLOBAL['private_data_folder'] = $GLOBAL['data_folder'].'/private';
+$GLOBAL['public_data_folder'] =  $GLOBAL['data_folder'].'/public';
+$GLOBAL['default_data_folder'] =  $GLOBAL['public_data_folder'];//change to private_data_folder to make private the default status
+$GLOBAL['version']='2.0';
+$GLOBAL['rss_title']='Respawn: le flux de la webliothèque';
+$GLOBAL['rss_description']='Le respawn de warriordudimanche.net';
+$GLOBAL['respawn_url']=returncurrenturl();
+$GLOBAL['message'] = 'Votre webliothèque perso';
+$GLOBAL['public_title'] = 'Voici la webliothèque publique de Bronco';
 $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:javascript:(function(){var url = location.href;window.open("http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].'?q="+ encodeURIComponent(url),"_blank","menubar=yes,height=600,width=1000,toolbar=yes,scrollbars=yes,status=yes");})();\' >Bookmarklet</a>';
 $column_width='width:47%';
-if ($public){$bookmarklet='';$column_width='width:97%';}
-if (!creer_dossier($GLOBALS['data_folder'], TRUE)) { die('Cant create '.$GLOBALS['data_folder'].' folder.'); }
-if (!creer_dossier($GLOBALS['data_folder'].'/zipversions', TRUE)) { die('Cant create '.$GLOBALS['data_folder'].'/zipversions'.' folder.'); }
-if (!creer_dossier($GLOBALS['private_data_folder'], TRUE)) { die('Cant create '.$GLOBALS['private_data_folder'].' folder.'); }
-if (!creer_dossier($GLOBALS['public_data_folder'], TRUE)) { die('Cant create '.$GLOBALS['public_data_folder'].' folder.'); }
+if ($GLOBAL['public']){$bookmarklet='';$column_width='width:97%';}
+if (!creer_dossier($GLOBAL['data_folder'], TRUE)) { die('Cant create '.$GLOBAL['data_folder'].' folder.'); }
+if (!creer_dossier($GLOBAL['data_folder'].'/zipversions', TRUE)) { die('Cant create '.$GLOBAL['data_folder'].'/zipversions'.' folder.'); }
+if (!creer_dossier($GLOBAL['private_data_folder'], TRUE)) { die('Cant create '.$GLOBAL['private_data_folder'].' folder.'); }
+if (!creer_dossier($GLOBAL['public_data_folder'], TRUE)) { die('Cant create '.$GLOBAL['public_data_folder'].' folder.'); }
+if (is_file($GLOBAL['data_folder'].'/tags.txt')){$GLOBAL['tag_array']=unstore($GLOBAL['data_folder'].'/tags.txt');}else{$GLOBAL['tag_array']=array('public'=>array(),'private'=>array());store($GLOBAL['data_folder'].'/tags.txt',$GLOBAL['tag_array']);}
+if (!isset($GLOBAL['tag_array']['public'])){$GLOBAL['tag_array']['public']=array();};
+if (!isset($GLOBAL['tag_array']['private'])){$GLOBAL['tag_array']['private']=array();};
+	
 
 //
 // BEGIN SCRIPT
@@ -62,9 +171,9 @@ if (!creer_dossier($GLOBALS['public_data_folder'], TRUE)) { die('Cant create '.$
 
 // init
 // url not yet retrieved
-$GLOBALS['done']['d'] = FALSE;
+$GLOBAL['done']['d'] = FALSE;
 
-if (!$public){
+if (!$GLOBAL['public']){ // private
 	// Get URL to save.
 	if (!empty($_GET['q'])) {
 
@@ -73,39 +182,39 @@ if (!$public){
 		if (strpos($url, '://') === false) {
 			$url = 'http://'.$url;
 		}
-		$GLOBALS['url'] = $url;
+		$GLOBAL['url'] = $url;
 		$url_p = url_parts();
 
 		// retrieve the file main HTML file
 
-		$GLOBALS['main_page_data'] = get_external_file($GLOBALS['url'], 6);
+		$GLOBAL['main_page_data'] = get_external_file($GLOBAL['url'], 6);
 
 
-		if ($GLOBALS['main_page_data'] === FALSE) {
+		if ($GLOBAL['main_page_data'] === FALSE) {
 			die('error retrieving external main page');
 		}
 
 		else {
 			// crée le nouveau dossier basé sur le TS.
 			$new_folder = date('Y-m-d-H-i-s');
-			if (!creer_dossier($GLOBALS['default_data_folder'].'/'.$new_folder) === TRUE ) {
+			if (!creer_dossier($GLOBAL['default_data_folder'].'/'.$new_folder) === TRUE ) {
 				die('error creating data folder');
 			}
 			else {
-				$GLOBALS['target_folder'] = $GLOBALS['default_data_folder'].'/'.$new_folder;
+				$GLOBAL['target_folder'] = $GLOBAL['default_data_folder'].'/'.$new_folder;
 			}
 
 			/*GESTION DU PDF ICI*/
 			if (strtolower(substr($_GET['q'],-4))=='.pdf'){
 				$title=basename($_GET['q']);
-				file_put_contents($GLOBALS['target_folder'].'/'.$title,$GLOBALS['main_page_data']);
-				file_put_contents($GLOBALS['target_folder'].'/index.php','<?php header("location: '.$title.'");?>');
+				file_put_contents($GLOBAL['target_folder'].'/'.$title,$GLOBAL['main_page_data']);
+				file_put_contents($GLOBAL['target_folder'].'/index.php','<?php header("location: '.$title.'");?>');
 			}else{
 
 
 				$liste_css = array();
 				// parse le fichier principal à la recherche de données à télécharger
-				$files = list_retrievable_data($GLOBALS['url'], $GLOBALS['main_page_data']);
+				$files = list_retrievable_data($GLOBAL['url'], $GLOBAL['main_page_data']);
 				// les récupère et les enregistre.
 				//echo '<pre>';print_r($files);die();
 				foreach ($files as $i => $file) {
@@ -115,20 +224,20 @@ if (!$public){
 							$liste_css[] = $file;
 						}
 						else {
-							file_put_contents($GLOBALS['target_folder'].'/'.$file['nom_destination'], $data);
+							file_put_contents($GLOBAL['target_folder'].'/'.$file['nom_destination'], $data);
 						}
 					}
 				}
 				// remplace juste les liens <a href=""> relatifs vers des liens absolus
-				absolutes_links($GLOBALS['main_page_data']);
+				absolutes_links($GLOBAL['main_page_data']);
 
 				// enregistre le fichier HTML principal
-				file_put_contents($GLOBALS['target_folder'].'/'.'index.html', $GLOBALS['main_page_data']);
+				file_put_contents($GLOBAL['target_folder'].'/'.'index.html', $GLOBAL['main_page_data']);
 
 				// récupère le titre de la page
 				// cherche le charset spécifié dans le code HTML.
 				// récupère la balise méta tout entière, dans $meta
-				preg_match('#<meta .*charset=.*>#Usi', $GLOBALS['main_page_data'], $meta);
+				preg_match('#<meta .*charset=.*>#Usi', $GLOBAL['main_page_data'], $meta);
 
 				// si la balise a été trouvée, on tente d’isoler l’encodage.
 				if (!empty($meta[0])) {
@@ -138,7 +247,7 @@ if (!$public){
 					$html_charset = (!empty($enc[1])) ? strtolower($enc[1]) : 'utf-8';
 				} else { $html_charset = 'utf-8'; }
 				// récupère le titre, dans le tableau $titles, rempli par preg_match()
-				preg_match('#<title>(.*)</title>#Usi', $GLOBALS['main_page_data'], $titles);
+				preg_match('#<title>(.*)</title>#Usi', $GLOBAL['main_page_data'], $titles);
 				if (!empty($titles[1])) {
 					$html_title = trim($titles[1]);
 					// ré-encode le titre en UTF-8 en fonction de son encodage.
@@ -224,14 +333,14 @@ if (!$public){
 
 								if (!preg_match('#(css|php|txt|html)#', $file['url_fichier']) ) {
 									if (FALSE !== ($f = get_external_file($url_fichier, 3)) ) {
-										file_put_contents($GLOBALS['target_folder'].'/'.$nouveau_nom, $f);
+										file_put_contents($GLOBAL['target_folder'].'/'.$nouveau_nom, $f);
 									}
 								}
 							}
 						}
 
 						// don't forget to save data
-						file_put_contents($GLOBALS['target_folder'].'/'.$file['nom_destination'], $data);
+						file_put_contents($GLOBAL['target_folder'].'/'.$file['nom_destination'], $data);
 					}
 					$n++;
 					$count = count($liste_css);
@@ -239,12 +348,12 @@ if (!$public){
 			}
 			// enregistre un fichier d’informations concernant la page (date, url, titre)
 			$info  = '';
-			$info .= 'URL="'.$GLOBALS['url'].'"'."\n";
+			$info .= 'URL="'.$GLOBAL['url'].'"'."\n";
 			$info .= 'TITLE="'.$title.'"'."\n";
 			$info .= 'DATE="'.time().'"'."\n";
-			file_put_contents($GLOBALS['target_folder'].'/'.'index.ini', $info);
-			/*$GLOBALS['done']['d'] = 'ajout';			
-			$GLOBALS['done']['lien'] = $GLOBALS['target_folder'].'/';	*/
+			file_put_contents($GLOBAL['target_folder'].'/'.'index.ini', $info);
+			/*$GLOBAL['done']['d'] = 'ajout';			
+			$GLOBAL['done']['lien'] = $GLOBAL['target_folder'].'/';	*/
 			
 		}
 		
@@ -264,7 +373,7 @@ if (!$public){
 			}
 			// then the folder itself.
 	        if (TRUE === rmdir($_GET['suppr'])) {
-					$GLOBALS['done']['d'] = 'remove';			
+					$GLOBAL['done']['d'] = 'remove';			
 
 			}
 	    }
@@ -275,70 +384,145 @@ if (!$public){
 	// to private
 	if (isset($_GET['toprivate']) and $torem = $_GET['toprivate'] and $torem != '') {
 		$torem = htmlspecialchars($_GET['toprivate']);
-		if (is_dir($GLOBALS['public_data_folder'].'/'.$_GET['toprivate'])){
-			rename ($GLOBALS['public_data_folder'].'/'.$_GET['toprivate'],$GLOBALS['private_data_folder'].'/'.$_GET['toprivate']);
+		if (is_dir($GLOBAL['public_data_folder'].'/'.$_GET['toprivate'])){
+			rename ($GLOBAL['public_data_folder'].'/'.$_GET['toprivate'],$GLOBAL['private_data_folder'].'/'.$_GET['toprivate']);
 			header("location: index.php");
 		}
 	}
 	// to public
 	if (isset($_GET['topublic']) and $torem = $_GET['topublic'] and $torem != '') {
 		$torem = htmlspecialchars($_GET['topublic']);
-		if (is_dir($GLOBALS['private_data_folder'].'/'.$_GET['topublic'])){
-			rename ($GLOBALS['private_data_folder'].'/'.$_GET['topublic'],$GLOBALS['public_data_folder'].'/'.$_GET['topublic']);
+		if (is_dir($GLOBAL['private_data_folder'].'/'.$_GET['topublic'])){
+			rename ($GLOBAL['private_data_folder'].'/'.$_GET['topublic'],$GLOBAL['public_data_folder'].'/'.$_GET['topublic']);
 			header("location: index.php");
 		}
 	}
 	// disconnect
 	if (isset($_GET['discotime'])){log_user('disco','');}
 
-	if (isset($_GET['privateget'])&&is_dir($GLOBALS['private_data_folder'].'/'.$_GET['privateget'])){$target=$GLOBALS['private_data_folder'].'/'.$_GET['privateget'];}
-
+	if (isset($_GET['privateget'])&&is_dir($GLOBAL['private_data_folder'].'/'.$_GET['privateget'])){$target=$GLOBAL['private_data_folder'].'/'.$_GET['privateget'];}
 
 	if (isset($_GET['zipprivate'])) { 
-		$ini_file = $GLOBALS['private_data_folder'].'/'.$_GET['zipprivate'].'/index.ini';
+		$ini_file = $GLOBAL['private_data_folder'].'/'.$_GET['zipprivate'].'/index.ini';
 		if(is_file($ini_file)){$info=parse_ini_file($ini_file);}else{$info['TITLE']='';}
-		$origin_folder_path=$GLOBALS['private_data_folder'].'/'.$_GET['zipprivate'];
+		$origin_folder_path=$GLOBAL['private_data_folder'].'/'.$_GET['zipprivate'];
 		$zip_foldername=title2filename($info['TITLE']).'-'.$_GET['zipprivate'];
 		$zip_filename=$zip_foldername.'.zip';
-		$zip_completepath=$GLOBALS['data_folder'].'/zipversions/'.$zip_filename;
+		$zip_completepath=$GLOBAL['data_folder'].'/zipversions/'.$zip_filename;
 		if (is_file($zip_completepath)){header("location: $zip_completepath");exit();}// il existe déjà, on envoie
 		if (is_dir($origin_folder_path)){// sinon on crée le zip si le dossier existe
 			include 'zip.php';			
 			rename ($origin_folder_path,$zip_foldername); // on le déplace pour éviter de voir la structure de dossiers apparaître dans le zip
-			zip($zip_filename,$zip_foldername,$GLOBALS['data_folder'].'/zipversions/');  
+			zip($zip_filename,$zip_foldername,$GLOBAL['data_folder'].'/zipversions/');  
 			rename ($zip_foldername,$origin_folder_path); // on le remet à sa place
-			header('location: '.$GLOBALS['data_folder'].'/zipversions/'.$zip_filename);
+			header('location: '.$GLOBAL['data_folder'].'/zipversions/'.$zip_filename);
 		}
 	}
-}
-	// public get 
+
+	if (isset($_GET['rename'])&&isset($_GET['to'])&&isset($_GET['file'])) { 
+		if (is_file($_GET['file'].'/index.ini')){
+			$ini=parse_ini_file($_GET['file'].'/index.ini');
+			
+			$old=strip_tags(urldecode($_GET['rename']));
+			$new=strip_tags(urldecode($_GET['to']));
+			$newini='URL="'.$ini['URL'].'"'."\n".'TITLE="'.$new.'"'."\n".'DATE="'.$ini['DATE'].'"';
+			//$ini=str_replace('TITLE="'.$old.'"','TITLE="'.$new.'"',$ini);aff($ini);
+			file_put_contents($_GET['file'].'/index.ini',$newini);
+		}
+	}
+	if (isset($_GET['settag'])&&isset($_GET['file'])) { 
+		if (is_file($GLOBAL['data_folder'].'/tags.txt')){$GLOBAL['tag_array']=unstore($GLOBAL['data_folder'].'/tags.txt');}else{$GLOBAL['tag_array']=array();}	
+		if (isset($_GET['ispublic'])){$type='public';}else{$type='private';}
+		$GLOBAL['tag_array'][$type][$_GET['file']]=strip_tags($_GET['settag']);
+		store($GLOBAL['data_folder'].'/tags.txt',$GLOBAL['tag_array']);
+	}
+}else{ // public get 	
 	//download public zip version
 	if (isset($_GET['zippublic'])) {
-		$ini_file = $GLOBALS['public_data_folder'].'/'.$_GET['zippublic'].'/index.ini';
-		if(is_file($ini_file)){$info=parse_ini_file($ini_file);}else{$info['TITLE']='';}
-		$origin_folder_path=$GLOBALS['public_data_folder'].'/'.$_GET['zippublic'];
-		$zip_foldername=title2filename($info['TITLE']).'-'.$_GET['zippublic'];
-		$zip_filename=$zip_foldername.'.zip';
-		$zip_completepath=$GLOBALS['data_folder'].'/zipversions/'.$zip_filename;
-		if (is_file($zip_completepath)){header("location: $zip_completepath");exit();}// il existe déjà, on envoie
-		if (is_dir($origin_folder_path)){// sinon on crée le zip si le dossier existe
-			include 'zip.php';			
-			rename ($origin_folder_path,$zip_foldername); // on le déplace pour éviter de voir la structure de dossiers apparaître dans le zip
-			zip($zip_filename,$zip_foldername,$GLOBALS['data_folder'].'/zipversions/');  
-			rename ($zip_foldername,$origin_folder_path); // on le remet à sa place
-			header('location: '.$GLOBALS['data_folder'].'/zipversions/'.$zip_filename);
-		}
+	$ini_file = $GLOBAL['public_data_folder'].'/'.$_GET['zippublic'].'/index.ini';
+	if(is_file($ini_file)){$info=parse_ini_file($ini_file);}else{$info['TITLE']='';}
+	$origin_folder_path=$GLOBAL['public_data_folder'].'/'.$_GET['zippublic'];
+	$zip_foldername=title2filename($info['TITLE']).'-'.$_GET['zippublic'];
+	$zip_filename=$zip_foldername.'.zip';
+	$zip_completepath=$GLOBAL['data_folder'].'/zipversions/'.$zip_filename;
+	if (is_file($zip_completepath)){header("location: $zip_completepath");exit();}// il existe déjà, on envoie
+	if (is_dir($origin_folder_path)){// sinon on crée le zip si le dossier existe
+		include 'zip.php';			
+		rename ($origin_folder_path,$zip_foldername); // on le déplace pour éviter de voir la structure de dossiers apparaître dans le zip
+		zip($zip_filename,$zip_foldername,$GLOBAL['data_folder'].'/zipversions/');  
+		rename ($zip_foldername,$origin_folder_path); // on le remet à sa place
+		header('location: '.$GLOBAL['data_folder'].'/zipversions/'.$zip_filename);
 	}
-	if (isset($_GET['publicget'])&&is_dir($GLOBALS['public_data_folder'].'/'.$_GET['publicget'])){$target=$GLOBALS['public_data_folder'].'/'.$_GET['publicget'];}
+	}
+	if (isset($_GET['publicget'])&&is_dir($GLOBAL['public_data_folder'].'/'.$_GET['publicget'])){$target=$GLOBAL['public_data_folder'].'/'.$_GET['publicget'];}
+	if (isset($_GET['rss'])){
 
+		$items=array_reverse(search('public',$search_tags));
+		$feed=array(
+			'infos'=>array(
+				'type'=>'rss',
+				'description'=>$GLOBAL['rss_description'],
+				'title'=>$GLOBAL['rss_title'],
+				'link'=>$GLOBAL['respawn_url'],
+			)
+		);
+		foreach ($items as $key=>$item){
+			if ($item!='index.html'){	
+				if (is_dir($GLOBAL['public_data_folder'].'/'.$item)){					
+					if (is_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini')){
+						$infos=parse_ini_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini');
+						date_default_timezone_set('Europe/Paris');
+						$infos['DATE']= date("r", $infos['DATE']);
+						if ($infos['TITLE']==''){$infos['TITLE']='Version Respawn de '.$infos['URL'];}
+						$feed['items'][$key]=array(
+							'description'=>'Version Respawn de '.$infos['URL'],
+							'title'=>$infos['TITLE'],
+							'link'=>$GLOBAL['respawn_url'].'?publicget='.$item,
+							'guid'=>$infos['URL'],
+							'pubDate'=>$infos['DATE'],
+						);
+				}
+				}
+			}
+
+		}
+		exit(array2feed($feed));
+	}
+	if (isset($_GET['api'])){
+		$content=array();
+		$items=search('public',$search_tags);	
+		foreach ($items as $key=>$item){
+			if ($item!='index.html'){	
+				if (is_dir($GLOBAL['public_data_folder'].'/'.$item)){					
+					if (is_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini')){
+						$infos=parse_ini_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini');
+						date_default_timezone_set('Europe/Paris');
+						$infos['DATE']= date('d/m/Y', $infos['DATE']);
+						if ($infos['TITLE']==''){$infos['TITLE']='Respawn de '.$infos['URL'];}
+						$content[$key]=array(
+							'description'=>'Version Respawn de '.$infos['URL'],
+							'title'=>$infos['TITLE'],
+							'respawn_link'=>$GLOBAL['respawn_url'].'?publicget='.$item,
+							'original_link'=>$infos['URL'],
+							'date'=>$infos['DATE'],
+							'tags'=>$GLOBAL['tag_array']['public'][$item],
+						);
+				}
+				}
+			}
+
+		}
+		exit(serialize($content));
+	}
+}
 
 
 
 function url_parts() {
-	$url_p['s']    = parse_url($GLOBALS['url'], PHP_URL_SCHEME); $url_p['s']   = (is_null($url_p['s'])) ? '' : $url_p['s'];
-	$url_p['h']    = parse_url($GLOBALS['url'], PHP_URL_HOST);   $url_p['h']   = (is_null($url_p['h'])) ? '' : $url_p['h'];
-	$url_p['p']    = parse_url($GLOBALS['url'], PHP_URL_PORT);   $url_p['p']   = (is_null($url_p['p'])) ? '' : ':'.$url_p['p'];
-	$url_p['pat']  = parse_url($GLOBALS['url'], PHP_URL_PATH);   $url_p['pat'] = (is_null($url_p['pat'])) ? '' : $url_p['pat'];
+	$url_p['s']    = parse_url($GLOBAL['url'], PHP_URL_SCHEME); $url_p['s']   = (is_null($url_p['s'])) ? '' : $url_p['s'];
+	$url_p['h']    = parse_url($GLOBAL['url'], PHP_URL_HOST);   $url_p['h']   = (is_null($url_p['h'])) ? '' : $url_p['h'];
+	$url_p['p']    = parse_url($GLOBAL['url'], PHP_URL_PORT);   $url_p['p']   = (is_null($url_p['p'])) ? '' : ':'.$url_p['p'];
+	$url_p['pat']  = parse_url($GLOBAL['url'], PHP_URL_PATH);   $url_p['pat'] = (is_null($url_p['pat'])) ? '' : $url_p['pat'];
 	$url_p['file'] = pathinfo($url_p['pat'], PATHINFO_BASENAME);
 	return $url_p;
 }
@@ -520,7 +704,7 @@ function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $
 		$url_fichier = $url_p['s'].'://'.$url_p['h'].$match;
 	}
 	else { // relative local path
-		$uuu = (strlen($url_p['file']) == 0 or preg_match('#/$#', $url_p['pat'])) ? $GLOBALS['url'] : substr($GLOBALS['url'], 0, -strlen($url_p['file'])) ;
+		$uuu = (strlen($url_p['file']) == 0 or preg_match('#/$#', $url_p['pat'])) ? $GLOBAL['url'] : substr($GLOBAL['url'], 0, -strlen($url_p['file'])) ;
 		$url_fichier = $uuu . substr($match, 0, -strlen($nom_fichier)).$nom_fichier;
 	}
 
@@ -564,13 +748,13 @@ function rand_new_name($name) {
 }
 
 
-if ($GLOBALS['done']['d'] !== FALSE) {
-	switch($GLOBALS['done']['d']) {
+if ($GLOBAL['done']['d'] !== FALSE) {
+	switch($GLOBAL['done']['d']) {
 		case 'ajout' :
-			header('Location: index.php?done='.$GLOBALS['done']['d'].'&lien='.urlencode($GLOBALS['url']).'&loclink='.urlencode($GLOBALS['done']['lien']));
+			header('Location: index.php?done='.$GLOBAL['done']['d'].'&lien='.urlencode($GLOBAL['url']).'&loclink='.urlencode($GLOBAL['done']['lien']));
 			break;
 		case 'remove' :
-			header('Location: index.php?done='.$GLOBALS['done']['d']);
+			header('Location: index.php?done='.$GLOBAL['done']['d']);
 			break;
 	}
 	echo '</div>'."\n";
@@ -584,23 +768,41 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 <!DOCTYPE html>
 <html>
 	<head>
+		<?php 
+		if (!empty($_GET['publicget'])){
+			$id=strip_tags($_GET['publicget']);
+			$temp=parse_ini_file($GLOBAL['public_data_folder'].'/'.$id.'/index.ini');
+			$page_title=$temp['TITLE'];
+		}else if (!empty($search_tags)){
+			$page_title='Tag: '.$search_tags;
+		}
+		else{$page_title='Respawn – a PHP WebPage Saver'; }
+		 ?>
 		<meta charset="utf-8" /></head>
-		<title>Respawn – a PHP WebPage Saver</title>	
+		<title><?php echo $page_title; ?></title>	
 		<link rel="stylesheet" type="text/css" href="design/style.css"/>
 		<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">
 		<!--[if IE]><script> document.createElement("article");document.createElement("aside");document.createElement("section");document.createElement("footer");</script> <![endif]-->
 		
 	</head>
 <body <?php echo $bodyclass;?>>
-	<header><a href="<?php echo $_SERVER['PHP_SELF'].$publicarg; ?>"><img src="design/logo2.png"/></a>
+	<header><a href="<?php echo $GLOBAL['respawn_url'].$publicarg; ?>"><img src="design/logo2.png"/></a>
 		<nav id="orpx_nav-bar">
 		<?php 
-			if (!$public){
+			if (!$GLOBAL['public']){
 				echo "\t".'<form method="get" action="'.$_SERVER['PHP_SELF'].'" style="text-align:center">'."\n";
 				echo "\t\t".'<input id="____q" type="text" size="70" name="q" value="" placeholder="URL from the page to download" />'."\n";
 				echo "\t\t".'<input type="submit" value="Retrieve"/>'."\n";
 				echo "\t".'</form>'."\n";
-			} else{echo '<p>'.$GLOBALS['message'].'</p>';}
+			} else{
+				echo '<p>';
+				if (!empty($target)){echo $page_title.' <a class="zip" href="?zippublic='.strip_tags($_GET['publicget']).'" title="Get ZIP version"></a>';}else{echo $GLOBAL['message'];}
+				echo '</p>';
+			}
+		
+			echo '<div class="tag_cloud">';
+			tagcloud();
+			echo '</div>';
 		?>
 		</nav>
 	</header>
@@ -609,7 +811,8 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 	if (!empty($target)){
 		echo '<iframe name="embed" style="min-height: 800px;" src="'.$target.'" width="100%" height="100%" scrolling="auto" frameborder="0" allowtransparency="true" ></iframe>';
 	}else{
-		if (!$public){
+		if (!empty($search_tags)){echo '<h2> Tag : <em>'.$search_tags.'</em> - <a href="'.$GLOBAL['respawn_url'].'">No tag</a></h2><hr/>';}
+		if (!$GLOBAL['public']){
 			if (isset($_GET['done']) and $_GET['done'] !== FALSE) {
 				echo '<div id="new-link">'."\n";
 				switch($_GET['done']) {
@@ -627,16 +830,17 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 		}
 		// public pages
 		echo '<div class="public" style="'.$column_width.'">'."\n";
-		$liste_pages = scandir($GLOBALS['public_data_folder']);
+		$liste_pages = search('public',$search_tags);
+
 		if ( ($nb = count($liste_pages)) != 0 ) {
 			echo '<ul id="liste-pages-sauvees">'."\n";
 
 			for ($i = 0 ; $i < $nb ; $i++) {
 				// dont list '.' and '..' folders.
-				if (is_dir($GLOBALS['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
+				if (is_dir($GLOBAL['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 					// each folder should contain such a file "index.ini".
-					$ini_file = $GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-					$favicon = glob($GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
+					$ini_file = $GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
+					$favicon = glob($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
 
 					$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 					if ( is_file($ini_file) and is_readable($ini_file) ) {
@@ -649,29 +853,37 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 					} else {
 						$titre = 'titre'; $url = '#'; $date = 'date inconnue';
 					}
+
+					$tags=$taglinks='';
+					if (isset($GLOBAL['tag_array']['public'][$liste_pages[$i]])){$tags=$GLOBAL['tag_array']['public'][$liste_pages[$i]];$taglinks=tag2links($GLOBAL['tag_array']['public'][$liste_pages[$i]]);}
 					echo "\t".'<li>';
-					if (!$public){echo '<a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a>';}
-					echo '<a class="zip" href="?zippublic='.$liste_pages[$i].'"  title="Download zip version"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="?public&publicget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em>';
-					if (!$public){echo '<a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";}else{echo "</li>\n";}
+					if (!$GLOBAL['public']){echo '<a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a>';}
+					if (!$GLOBAL['public']){echo '<a class="rename" onclick="rename(\''.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'\',\''.$titre.'\',this)" href="" title="rename"> </a>';}
+					if (!$GLOBAL['public']){echo '<a class="tagme" onclick="tag(\'&ispublic\',\''.$liste_pages[$i].'\',\''.$tags.'\',this)" href="#" title="edit tags"> </a>';}
+					echo '<a class="zip" href="?zippublic='.$liste_pages[$i].'"  title="Download zip version"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="?public&publicget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em> '.$taglinks;
+					if (!$GLOBAL['public']){echo '<a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";}else{echo "</li>\n";}
 				}
 			}
 			echo '</ul>'."\n";
-		}
+		}else{echo 'Nothing found...';}
 		echo '</div>'."\n";
 
-		if (!$public){ // don't list private pages
+
+
+// PRIVATE PAGES ------------------------------------------------------------------------------------------
+		if (!$GLOBAL['public']){ 
 		
 			echo '<div class="private" style="'.$column_width.'">'."\n";
-			$liste_pages = scandir($GLOBALS['private_data_folder']);
+			$liste_pages = search('private',$search_tags);
 			if ( ($nb = count($liste_pages)) != 0 ) {
 				echo '<ul id="liste-pages-sauvees">'."\n";
 
 				for ($i = 0 ; $i < $nb ; $i++) {
 					// dont list '.' and '..' folders.
-					if (is_dir($GLOBALS['private_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
+					if (is_dir($GLOBAL['private_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 						// each folder should contain such a file "index.ini".
-						$ini_file = $GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-						$favicon=glob($GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
+						$ini_file = $GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'/index.ini';
+						$favicon=glob($GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
 						$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 						if ( is_file($ini_file) and is_readable($ini_file) ) {
 							$infos = parse_ini_file($ini_file);
@@ -683,22 +895,46 @@ if ($GLOBALS['done']['d'] !== FALSE) {
 						} else {
 							$titre = 'titre'; $url = '#'; $date = 'date inconnue';
 						}
-						echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBALS['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a><a class="zip" href="?zipprivate='.$liste_pages[$i].'"  title="Download zip version"> </a><a class="origine" href="'.$url.'" title="origin"> </a> - <a href="?privateget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em><a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a></li>'."\n";
+						$tags=$taglinks='';
+						if (isset($GLOBAL['tag_array']['private'][$liste_pages[$i]])){$tags=$GLOBAL['tag_array']['private'][$liste_pages[$i]];$taglinks=tag2links($GLOBAL['tag_array']['private'][$liste_pages[$i]]);}
+					
+						echo "\t".'<li><a class="suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr"> </a>
+						<a class="rename" onclick="rename(\''.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'\',\''.$titre.'\',this)" href="#" title="rename"> </a>
+						<a class="tagme" onclick="tag(\'\',\''.$liste_pages[$i].'\',\''.$tags.'\',this)" href="#" title="edit tags"> </a>
+						<a class="zip" href="?zipprivate='.$liste_pages[$i].'"  title="Download zip version"> </a>
+						<a class="origine" href="'.$url.'" title="origin"> </a> - <a href="?privateget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em> '.$taglinks.' <a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a></li>'."\n";
 					}
 				}
 				echo '</ul>'."\n";
-			}
+			}else{echo 'Nothing found...';}
 			echo '</div>'."\n";
 		}
 	}
 ?>
 	</aside>
-<footer>
-		<p style='float:left'>
-			<?php if (!$public){echo '<a href="?discotime">Disconnect</a>';}?>
-			<?php if (!$public){echo $bookmarklet;} ?></p><p><a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <?php $GLOBALS['message'];?> - <a href='?public'>Public page link</a>
-			<script id='flattrbtn'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=Broncowdd&button=compact&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=20;f.width=110;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('flattrbtn');</script>
-		</p>
-</footer>
+	<footer>				
+		<script id='flattrbtn'>(function(i){var f,s=document.getElementById(i);f=document.createElement('iframe');f.src='//api.flattr.com/button/view/?uid=Broncowdd&button=compact&url='+encodeURIComponent(document.URL);f.title='Flattr';f.height=15;f.width=110;f.style.borderWidth=0;s.parentNode.insertBefore(f,s);})('flattrbtn');</script>
+		<a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <a href='?public'>Public page link</a> - 
+		<a href="?rss<?php if ($search_tags!='') {echo '&tag='.$search_tags; }?>"> RSS </a> -
+		<?php if (!$GLOBAL['public']){echo $bookmarklet;} ?> - 
+		<?php if (!$GLOBAL['public']){echo '<a href="?discotime">Disconnect</a>';}?>
+	</footer>
+
+	<script>
+		function rename(file,oldname,obj){
+			newname= prompt('Rename this page:',oldname);
+			if (newname && newname!=oldname){
+				obj.setAttribute('href',"<?php echo $GLOBAL['respawn_url']; ?>?rename="+encodeURIComponent(oldname)+"&to="+encodeURIComponent(newname)+"&file="+file);
+				
+			}else{}
+		}
+		function tag(ispublic,file,oldtags,obj){
+			newtags= prompt('Tags for this page:',oldtags);
+			if (newtags && newtags!=oldtags){
+				obj.setAttribute('href',"<?php echo $GLOBAL['respawn_url']; ?>?settag="+encodeURIComponent(newtags)+"&file="+file+ispublic);
+				
+			}else{}
+		}
+	</script>
 </body>
 </html>
