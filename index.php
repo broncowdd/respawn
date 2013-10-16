@@ -96,14 +96,15 @@ function tagcloud(){
 	}
 
 	foreach ($array as $tag=>$val){
-		echo '<a class="tag_'.$val['status'].'" href="'.$GLOBAL['respawn_url'].'?tag='.$tag.'">'.$tag.' <em>'.$val['nb'].'</em></a>';
+		echo '<a class="tag_'.$val['status'].'" href="'.$GLOBAL['respawn_url'].'?'.$val['status'].'&tag='.$tag.'">'.$tag.' <em>'.$val['nb'].'</em></a>';
 	}
 }
 function tag2links($tagstring){
 	global $GLOBAL;
-	$array=explode(' ',$tagstring);$links='';
+	$array=explode(' ',$tagstring);$links='';$public='';
+	if ($GLOBAL['public']){$public='&public';}
 	foreach ($array as $tag){
-		$links.='<a href="'.$GLOBAL['respawn_url'].'?tag='.$tag.'" class="tag">'.$tag.'</a>';
+		$links.='<a href="'.$GLOBAL['respawn_url'].'?tag='.$tag.$public.'" class="tag">'.$tag.'</a>';
 	}
 	return $links;
 }
