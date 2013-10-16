@@ -78,7 +78,7 @@ function array2feed($array=null){
 function tagcloud(){
 	global $GLOBAL;
 	$array=array();
-	if (!$GLOBAL['public']){
+	if (!$GLOBAL['public'] && isset($GLOBAL['tag_array']['private'])){
 		foreach ($GLOBAL['tag_array']['private'] as $key=>$tag){
 			$tags=explode(' ',$tag);
 			foreach ($tags as $t){
