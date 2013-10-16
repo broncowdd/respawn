@@ -23,4 +23,6 @@ Merci à Timo pour cette merveille de simplicité et d'efficacité qui concourt 
 INSTALLATION:
 Dézippez l'archive sur votre serveur, allez à l'adresse, créez un mot de passe dans la première fenêtre et c'est parti.
 
+Démo: http://respawn.warriordudimanche.net/index.php?public
+
 Bronco - bronco@warriordudimanche.net 
