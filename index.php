@@ -519,6 +519,7 @@ if (!$GLOBAL['public']){ // private
 
 
 function url_parts() {
+	global $GLOBAL;	
 	$url_p['s']    = parse_url($GLOBAL['url'], PHP_URL_SCHEME); $url_p['s']   = (is_null($url_p['s'])) ? '' : $url_p['s'];
 	$url_p['h']    = parse_url($GLOBAL['url'], PHP_URL_HOST);   $url_p['h']   = (is_null($url_p['h'])) ? '' : $url_p['h'];
 	$url_p['p']    = parse_url($GLOBAL['url'], PHP_URL_PORT);   $url_p['p']   = (is_null($url_p['p'])) ? '' : ':'.$url_p['p'];
