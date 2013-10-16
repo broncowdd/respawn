@@ -692,6 +692,7 @@ function complete_url($url) {
 }
 
 function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $type) {
+	global $GLOBAL;
 	// get the filenam (basename)
 	$nom_fichier = (preg_match('#^https?://#', $match)) ? pathinfo(parse_url($match, PHP_URL_PATH), PATHINFO_BASENAME) : pathinfo($match, PATHINFO_BASENAME);
 	// get the URL. For relatives URL, uses the GLOBALS[url] tu make the complete URL
