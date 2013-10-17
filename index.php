@@ -500,13 +500,15 @@ if (!$GLOBAL['public']){ // private
 						date_default_timezone_set('Europe/Paris');
 						$infos['DATE']= date('d/m/Y', $infos['DATE']);
 						if ($infos['TITLE']==''){$infos['TITLE']='Respawn de '.$infos['URL'];}
+						$t=''
+						if (isset($GLOBAL['tag_array']['public'][$item])){$t=$GLOBAL['tag_array']['public'][$item];}
 						$content[$key]=array(
 							'description'=>'Version Respawn de '.$infos['URL'],
 							'title'=>$infos['TITLE'],
 							'respawn_link'=>$GLOBAL['respawn_url'].'?publicget='.$item,
 							'original_link'=>$infos['URL'],
 							'date'=>$infos['DATE'],
-							'tags'=>$GLOBAL['tag_array']['public'][$item],
+							'tags'=>$t,
 						);
 				}
 				}
