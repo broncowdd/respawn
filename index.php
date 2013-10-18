@@ -78,7 +78,7 @@ function array2feed($array=null){
 function tagcloud(){
 	global $GLOBAL;
 	$array=array();
-	if (!$GLOBAL['public'] && isset($GLOBAL['tag_array']['private'])){
+	if (!$GLOBAL['public']){
 		foreach ($GLOBAL['tag_array']['private'] as $key=>$tag){
 			$tags=explode(' ',$tag);
 			foreach ($tags as $t){
@@ -96,14 +96,15 @@ function tagcloud(){
 	}
 
 	foreach ($array as $tag=>$val){
-		echo '<a class="tag_'.$val['status'].'" href="'.$GLOBAL['respawn_url'].'?tag='.$tag.'">'.$tag.' <em>'.$val['nb'].'</em></a>';
+		echo '<a class="tag_'.$val['status'].'" href="'.$GLOBAL['respawn_url'].'?'.$val['status'].'&tag='.$tag.'">'.$tag.' <em>'.$val['nb'].'</em></a>';
 	}
 }
 function tag2links($tagstring){
 	global $GLOBAL;
-	$array=explode(' ',$tagstring);$links='';
+	$array=explode(' ',$tagstring);$links='';$public='';
+	if ($GLOBAL['public']){$public='&public';}
 	foreach ($array as $tag){
-		$links.='<a href="'.$GLOBAL['respawn_url'].'?tag='.$tag.'" class="tag">'.$tag.'</a>';
+		$links.='<a href="'.$GLOBAL['respawn_url'].'?tag='.$tag.$public.'" class="tag">'.$tag.'</a>';
 	}
 	return $links;
 }
@@ -499,13 +500,15 @@ if (!$GLOBAL['public']){ // private
 						date_default_timezone_set('Europe/Paris');
 						$infos['DATE']= date('d/m/Y', $infos['DATE']);
 						if ($infos['TITLE']==''){$infos['TITLE']='Respawn de '.$infos['URL'];}
+						$t='';
+						if (isset($GLOBAL['tag_array']['public'][$item])){$t=$GLOBAL['tag_array']['public'][$item];}
 						$content[$key]=array(
 							'description'=>'Version Respawn de '.$infos['URL'],
 							'title'=>$infos['TITLE'],
 							'respawn_link'=>$GLOBAL['respawn_url'].'?publicget='.$item,
 							'original_link'=>$infos['URL'],
 							'date'=>$infos['DATE'],
-							'tags'=>$GLOBAL['tag_array']['public'][$item],
+							'tags'=>$t,
 						);
 				}
 				}
@@ -519,7 +522,7 @@ if (!$GLOBAL['public']){ // private
 
 
 function url_parts() {
-	global $GLOBAL;	
+	global $GLOBAL;
 	$url_p['s']    = parse_url($GLOBAL['url'], PHP_URL_SCHEME); $url_p['s']   = (is_null($url_p['s'])) ? '' : $url_p['s'];
 	$url_p['h']    = parse_url($GLOBAL['url'], PHP_URL_HOST);   $url_p['h']   = (is_null($url_p['h'])) ? '' : $url_p['h'];
 	$url_p['p']    = parse_url($GLOBAL['url'], PHP_URL_PORT);   $url_p['p']   = (is_null($url_p['p'])) ? '' : ':'.$url_p['p'];
@@ -691,6 +694,7 @@ function complete_url($url) {
 }
 
 function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $type) {
+	global $GLOBAL;
 	// get the filenam (basename)
 	$nom_fichier = (preg_match('#^https?://#', $match)) ? pathinfo(parse_url($match, PHP_URL_PATH), PATHINFO_BASENAME) : pathinfo($match, PATHINFO_BASENAME);
 	// get the URL. For relatives URL, uses the GLOBALS[url] tu make the complete URL
