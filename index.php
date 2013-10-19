@@ -76,7 +76,6 @@ function deltags($tags,$path,$id=false,$status=false){
 	if (is_string($tags)){$tags=explode(' ',$tags);}
 	if (!$status){$status=statuspath($path);}
 	if (!$id){$id=idfrompath($path);}
-
 	foreach($tags as $tag){
 		if (isset($GLOBAL['tag_array'][$status][$id])){
 			$GLOBAL['tag_array'][$status][$id]=trim(str_replace(' '.$tag.' ','',' '.$GLOBAL['tag_array'][$status][$id].' '));
@@ -92,7 +91,6 @@ function settags($tags,$path,$id=false,$status=false){
 	$GLOBAL['tag_array'][$status][$id]=trim($tags);
 	store($GLOBAL['data_folder'].'/tags.txt',$GLOBAL['tag_array']);
 }
-
 function link2favicon($dir){
 	if (!is_dir($dir)){return '<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">';}
 	$favs=glob($dir.'/*favicon*');
@@ -174,7 +172,6 @@ function tagcloud(){
 		$tags=explode(' ',trim($tag));
 		foreach ($tags as $t){
 			if (!isset($array['public'][$t]['nb'])){$array['public'][$t]['nb']=1;}else{$array['public'][$t]['nb']++;}
-			//if (!isset($array[$t]['status'])){$array[$t]['status']='public';}
 		}
 	}
 

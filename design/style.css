@@ -46,10 +46,14 @@ aside iframe{height:100%;border:none;}
 aside ul{padding:0;}
 aside li{margin:5px;list-style:none;vertical-align:middle;border-radius:3px;}
 aside li .tag{font-size:10px;display:inline-block;padding:2px;border-radius:3px;}
-nav .tag_public, aside .public li .tag{display:inline-block;border-radius:3px;padding:2px;margin:1px;background:rgba(100,255,100,0.4);color:green;}
-nav .tag_public:hover, aside .public li .tag:hover{background:green;}
-nav .tag_private, aside .private li .tag{display:inline-block;border-radius:3px;padding:2px;margin:1px;background:rgba(255,100,100,0.4);color:pink;text-shadow:0 1px 1px darkred;}
-nav .tag_private:hover, aside .private li .tag:hover{background:red;}
+nav .tag_public{display:inline-block;border-radius:3px;padding:2px;margin:1px;background:rgba(100,255,100,0.4);color:green;text-shadow:0 1px 1px darkgreen;}
+aside .public li .tag{display:inline-block;border-radius:3px;padding:2px;margin:1px;background:rgba(100,255,100,0.4);color:green;}
+nav .tag_public:hover{background:green;}
+aside .public li .tag:hover{background:rgba(0,255,0,0.4);}
+nav .tag_private{display:inline-block;border-radius:3px;padding:2px;margin:1px;background:rgba(255,100,100,0.4);color:pink;text-shadow:0 1px 1px darkred;}
+aside .private li .tag{display:inline-block;border-radius:3px;padding:2px;margin:1px;background:rgba(255,100,100,0.4);color:darkred;}
+aside .private li .tag:hover{background:rgba(255,0,0,0.5);}
+nav .tag_private:hover{background:red;}
 .tag_cloud{padding:2px;}
 nav .tag_public{color:lightgreen;}
 

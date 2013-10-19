@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 	/**
 	 * @author bronco@warriordudimanche.com / www.warriordudimanche.net
 	 * @copyright open source and free to adapt (keep me aware !)
@@ -24,7 +24,7 @@
 	$auto_restrict['encryption_key']='abcdef';// clé pour le cryptage de la chaine de vérification
 	$auto_restrict['session_expiration_delay']=120;//minutes
 	//$auto_restrict['login']='bronco'; // caractères alphanum + _ et .
-	$auto_restrict['redirect_error']='index.php';// si précisé, pas de message d'erreur
+	$auto_restrict['redirect_error']='index.php?public';// si précisé, pas de message d'erreur
 	
 	
 	// ---------------------------------------------------------------------------------
@@ -52,6 +52,7 @@
 	if (isset($_POST['login'])&&isset($_POST['pass'])){
 		log_user($_POST['login'],$_POST['pass']);
 		if (isset($_POST['cookie'])){setcookie($auto_restrict['cookie_name'],sha1($_SERVER['HTTP_USER_AGENT']),time()+31104000);}//un an
+		header('location: index.php');
 	}
 
 	// ------------------------------------------------------------------	
@@ -59,13 +60,14 @@
 	// et la duree d'inactivité de la session
 	// si probleme,on include un form de login.
 	// ------------------------------------------------------------------
-	if (!is_ok()){session_destroy();include('login_form.php');exit();} 
+	if (!is_ok()){session_destroy();header('location: index.php?public');exit();} 
+
 	// ------------------------------------------------------------------
 	// demande de deco via la variable get 'deconnexion'
 	// ------------------------------------------------------------------	
 	if (isset($_GET['deconnexion'])){log_user($_POST['login'],$_POST['pass']);}
 	// ------------------------------------------------------------------	
-	
+	//header('location: index.php?public');
 	
 	
 		

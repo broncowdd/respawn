@@ -22,7 +22,7 @@
 </style>
 
 <div class="form_content">
-	<form action='' method='post' name='' >
+	<form action='auto_restrict.php' method='post' name='' >
 		<p class="logo"> </p>
 		<?php if(file_exists('pass.php')){echo '<h1>Identifiez-vous</h1>';}else{echo '<h1>Creez votre passe</h1>';} ?>
 			<hr/>
@@ -38,5 +38,5 @@
 		<hr/>
 		<input type='submit' value='Connexion'/>	
 	</form>
-	<a class="public" href="<?php echo $_SERVER['PHP_SELF'].'?public';?>" alt="link to public">> Page publique <</a>
+	<a class="public" href="index.php?public" alt="link to public">> Page publique <</a>
 </div>
