@@ -34,16 +34,11 @@ if (isset($_GET['tag'])){$search_tags=strip_tags($_GET['tag']);}else{$search_tag
 
 // CONFIGURABLE OPTIONS
 // change those directories'names for more security
-$GLOBAL['data_folder'] = 'mypersonaldata'; 
-$GLOBAL['private_data_folder'] = $GLOBAL['data_folder'].'/private';
-$GLOBAL['public_data_folder'] =  $GLOBAL['data_folder'].'/public';
-$GLOBAL['default_data_folder'] =  $GLOBAL['public_data_folder'];//change to private_data_folder to make private the default status
+include('config.php');
+
 $GLOBAL['version']='2.1';
-$GLOBAL['rss_title']='Respawn: le flux de la webliothèque';
-$GLOBAL['rss_description']='Le respawn de warriordudimanche.net';
 $GLOBAL['respawn_url']=returncurrenturl();
-$GLOBAL['message'] = 'Votre webliothèque perso';
-$GLOBAL['public_title'] = 'Voici la webliothèque publique de Bronco';
+
 $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:javascript:(function(){var url = location.href;window.open("http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].'?q="+ encodeURIComponent(url),"_blank","menubar=yes,height=600,width=1000,toolbar=yes,scrollbars=yes,status=yes");})();\' >Bookmarklet</a>';
 $column_width='width:47%';
 if ($GLOBAL['public']){$bookmarklet='';$column_width='width:97%';}
