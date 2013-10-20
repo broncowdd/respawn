@@ -54,9 +54,6 @@ if (!creer_dossier($GLOBAL['public_data_folder'], TRUE)) { die('Cant create '.$G
 if (is_file($GLOBAL['data_folder'].'/tags.txt')){$GLOBAL['tag_array']=unstore($GLOBAL['data_folder'].'/tags.txt');}else{$GLOBAL['tag_array']=array('public'=>array(),'private'=>array());store($GLOBAL['data_folder'].'/tags.txt',$GLOBAL['tag_array']);}
 if (!isset($GLOBAL['tag_array']['public'])){$GLOBAL['tag_array']['public']=array();};
 if (!isset($GLOBAL['tag_array']['private'])){$GLOBAL['tag_array']['private']=array();};
-	
-
-
 
 // Fonctions
 function aff($a,$stop=true){echo 'Arret a la ligne '.__LINE__.' du fichier '.__FILE__.'<pre>';var_dump($a);echo '</pre>';if ($stop){exit();}}
@@ -76,6 +73,7 @@ function deltags($tags,$path,$id=false,$status=false){
 	if (is_string($tags)){$tags=explode(' ',$tags);}
 	if (!$status){$status=statuspath($path);}
 	if (!$id){$id=idfrompath($path);}
+
 	foreach($tags as $tag){
 		if (isset($GLOBAL['tag_array'][$status][$id])){
 			$GLOBAL['tag_array'][$status][$id]=trim(str_replace(' '.$tag.' ','',' '.$GLOBAL['tag_array'][$status][$id].' '));
@@ -94,9 +92,12 @@ function settags($tags,$path,$id=false,$status=false){
 function link2favicon($dir){
 	if (!is_dir($dir)){return '<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">';}
 	$favs=glob($dir.'/*favicon*');
-	$fav=basename($favs[0]);
-	$extension=pathinfo($dir,PATHINFO_EXTENSION);
-	echo '<link rel="shortcut icon" type="/image/'.$extension.'" href="'.$dir.'/'.$fav.'">';
+	if (count($favs)>0){$fav=basename($favs[0]);
+		$extension=pathinfo($dir,PATHINFO_EXTENSION);
+		echo '<link rel="shortcut icon" type="/image/'.$extension.'" href="'.$dir.'/'.$fav.'">';
+	}else{
+		echo '<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">';;
+	}
 }
 function search($public='public',$tag=false){
 	global $GLOBAL;
@@ -164,7 +165,6 @@ function tagcloud(){
 			$tags=explode(' ',trim($tag));
 			foreach ($tags as $t){
 				if (!isset($array['private'][$t]['nb'])){$array['private'][$t]['nb']=1;}else{$array['private'][$t]['nb']++;}
-				//if (!isset($array['private'][$t]['status'])){$array[$t]['status']='private';}
 			}
 		}
 	}
@@ -172,6 +172,7 @@ function tagcloud(){
 		$tags=explode(' ',trim($tag));
 		foreach ($tags as $t){
 			if (!isset($array['public'][$t]['nb'])){$array['public'][$t]['nb']=1;}else{$array['public'][$t]['nb']++;}
+			//if (!isset($array[$t]['status'])){$array[$t]['status']='public';}
 		}
 	}
 
@@ -733,7 +734,6 @@ function complete_url($url) {
 }
 
 function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $type) {
-	global $GLOBAL;
 	// get the filenam (basename)
 	global $GLOBAL;
 	$nom_fichier = (preg_match('#^https?://#', $match)) ? pathinfo(parse_url($match, PHP_URL_PATH), PATHINFO_BASENAME) : pathinfo($match, PATHINFO_BASENAME);
