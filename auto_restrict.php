@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 	/**
 	 * @author bronco@warriordudimanche.com / www.warriordudimanche.net
 	 * @copyright open source and free to adapt (keep me aware !)
