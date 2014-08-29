@@ -134,6 +134,7 @@ if(file_exists('user_config.php')){
 }
 unset($GLOBAL['private_data_folder']);
 unset($GLOBAL['public_data_folder']);
+unset($GLOBAL['image'],$GLOBAL['document'],$GLOBAL['archive']);
 $GLOBAL['default_data_folder']=basename($GLOBAL['default_data_folder']);
 
 $message='';
