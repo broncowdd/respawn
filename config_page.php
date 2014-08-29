@@ -3,10 +3,10 @@
  * @author bronco@warriordudimanche.com
  * @copyright open source and free to adapt (keep me aware !)
  * @version 0.1
- *   auto_form.php is a little script to auto create a form and 
- *   its content only with an array. 
- *	 It can create text inputs radiobuttons, select lists, passwords inputs. 
- * 	 All the generated form's elements can be reached by classes 
+ *   auto_form.php is a little script to auto create a form and
+ *   its content only with an array.
+ *	 It can create text inputs radiobuttons, select lists, passwords inputs.
+ * 	 All the generated form's elements can be reached by classes
  *	 and ids with css or jquery.
  *
  *	 It's possible to configure auto_form to add some features
@@ -23,7 +23,7 @@ $config=array(
 	'use_a_radiobutton_choice'=>'choice one',// current value: other values are defined below
 	'my_password'=>'password',
 	'confirm_password'=>'',
-	
+
 );*/
 //then render_form($config);
 
@@ -31,7 +31,7 @@ $config=array(
 /* #####################################################################
    # auto_form config                                                  #
    #####################################################################
-   
+
 */
 
 // here are the basic parameters
@@ -68,7 +68,7 @@ function render_form($var){
 	if ($autoform_config['form_class']){$class=' class="'.$autoform_config['form_class'].'" ';}
 	if ($autoform_config['enctype']){$enctype=' enctype="'.$autoform_config['enctype'].'" ';}
 	if (isset($autoform_config['reset_button_label'])){$reset="<input type='reset' value='".$autoform_config['reset_button_label'].'"/>';}
-	
+
 	echo '<form name="'.$autoform_config['form_name']."\" $id $class $enctype method=\"".$autoform_config['method']."\" action=\"".$autoform_config['action']."\">\n ";
 		foreach($var as $key=>$value){
 			$all_keys.=$key.' | ';
@@ -77,7 +77,7 @@ function render_form($var){
 			$idclasname="name='$key' id='$key' class='$key'";
 			//
 			echo '<li>';
-			if (is_bool($value)){ 
+			if (is_bool($value)){
 				// oh, a checkbox !
 				if ($value==true){$checked=' checked ';}else{$checked='';}
 				echo $label;
@@ -89,7 +89,7 @@ function render_form($var){
 					// lists of choices
 					if (isset($autoform_config[$key]['type'])&&$autoform_config[$key]['type']=='radio'){
 						unset($autoform_config[$key]['type']);
-						
+
 						// oh, a radiobutton list !
 						echo $txt.'<br/>';
 						echo "<ul>\n";
@@ -98,11 +98,11 @@ function render_form($var){
 								echo "<li><label for='$choice$key'> $choice </label><input name='$key' type='radio' value='$choice' $checked id='$choice$key'/></li>\n";
 							}
 						echo "</ul>\n";
-						
+
 					}else{
 						// oh, a select input !
 						echo $label;
-						echo "<select $idclasname text='$value'>\n";						
+						echo "<select $idclasname text='$value'>\n";
 						foreach ($autoform_config[$key] as $choice){
 							if ($choice==$value){$checked='selected';}else{$checked='';}
 							echo "<option $checked value='$choice'>$choice</option>\n";
@@ -112,15 +112,15 @@ function render_form($var){
 				}else if (isset($autoform_config[$key]) && $autoform_config[$key]=='pass'){
 					//oh, a password input !
 					echo $label;
-					echo "<input type='password' $idclasname value='$value' />\n"; 
-				
+					echo "<input type='password' $idclasname value='$value' />\n";
+
 				}else{
 					// ok, so that's a text input...
 					echo $label;
 					if ($autoform_config['use_placeholder']){$placeholder=" placeholder='$txt'";}else{$placeholder='';}
-					echo "<input type='text' $idclasname value='$value' $placeholder/>\n"; 				
+					echo "<input type='text' $idclasname value='$value' $placeholder/>\n";
 				}
-		
+
 			}
 			echo "</li>\n";
 		}
@@ -129,13 +129,16 @@ function render_form($var){
 }
 include('auto_restrict.php');
 include('config.php');
+if(file_exists('user_config.php')){
+ include('user_config.php');
+}
 unset($GLOBAL['private_data_folder']);
 unset($GLOBAL['public_data_folder']);
 $GLOBAL['default_data_folder']=basename($GLOBAL['default_data_folder']);
 
 $message='';
 if ($_POST){
-	$auto_form['filename']='config.php';
+	$auto_form['filename']='user_config.php';
 	$auto_form['filecontent']="<?php \n /* The configuration generated with auto_form*/\n\n";
 	$auto_form['variable_name']='$GLOBAL';
 	$all_keys=explode(' | ',$_POST['all_keys']);
@@ -150,7 +153,7 @@ if ($_POST){
 		}else{// not bool
 			$auto_form['filecontent'].=$auto_form['variable_name']."['$key']='".$postdata[$key]."';\n";
 		}
-		
+
 	}
 	$auto_form['filecontent'].="\n?>";
 
@@ -164,9 +167,9 @@ if ($_POST){
 
 <!DOCTYPE html>
 <html>
-	<head>		
+	<head>
 		<meta charset="utf-8" /></head>
-		<title>Configuration</title>	
+		<title>Configuration</title>
 		<link rel="stylesheet" type="text/css" href="design/<?php echo $GLOBAL['skin']; ?>/style.css"/>
 		<link rel="shortcut icon" type="/image/png" href="design/<?php echo $GLOBAL['skin']; ?>/favicon2.png">
 		<!--[if IE]><script> document.createElement("article");document.createElement("aside");document.createElement("section");document.createElement("footer");</script> <![endif]-->
@@ -178,7 +181,7 @@ if ($_POST){
 		</nav>
 	</header>
 	<aside>
-<?php 
+<?php
 	render_form($GLOBAL);
 ?>
 	</aside>

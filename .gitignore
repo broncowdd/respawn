@@ -220,3 +220,4 @@ mypersonaldata/public/
 mypersonaldata/zipversions/
 !mypersonaldata/zipversions/index.html
 pass.php
+user_config.php
