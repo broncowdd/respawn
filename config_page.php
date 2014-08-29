@@ -48,7 +48,10 @@ $autoform_config=array(
 	'reset_button_label'
 );
 
-foreach (glob('design/*') as $skin){
+foreach (glob('design/*',GLOB_ONLYDIR) as $skin){
+  if(basename($skin) === 'icons'){
+   continue;
+  }
 	$skin=basename($skin);if ($skin!='index.html'){$skins[]=$skin;}
 }
 $autoform_config['skin']=$skins;
