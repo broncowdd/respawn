@@ -3,18 +3,18 @@
 /* (webpage retriever by Timo Van Neerden; http://lehollandaisvolant.net/contact December 2012)
  * last updated : December, 10th, 2012
  *
- * This piece of software is under the WTF Public Licence. 
- * Everyone is permitted to copy and distribute verbatim or modified 
+ * This piece of software is under the WTF Public Licence.
+ * Everyone is permitted to copy and distribute verbatim or modified
  * copies of this program, under the following terms of the WFTPL :
  *
- *            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE 
- *   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION 
+ *            DO WHAT THE FUCK YOU WANT TO PUBLIC LICENSE
+ *   TERMS AND CONDITIONS FOR COPYING, DISTRIBUTION AND MODIFICATION
  *
  *  0. You just DO WHAT THE FUCK YOU WANT TO.
  *
  */
 
-/* all the enhancements (logo, css, session lock, bookmarklet, tags, rss feed, api) are from Bronco (www.warriordudimanche.net) 
+/* all the enhancements (logo, css, session lock, bookmarklet, tags, rss feed, api) are from Bronco (www.warriordudimanche.net)
 *  and are based on the same licence ;)
 *  thanks a lot to Timo for his great job on this app ;) */
 
@@ -35,6 +35,9 @@ if (isset($_GET['tag'])){$search_tags=strip_tags($_GET['tag']);}else{$search_tag
 // CONFIGURABLE OPTIONS
 // adapter la configuration dans le fichier config.php
 include('config.php');
+if(file_exists('user_config.php')){
+ include('user_config.php');
+}
 
 $GLOBAL['version']='2.2';
 $GLOBAL['respawn_url']=returncurrenturl();
@@ -229,13 +232,25 @@ if (!$GLOBAL['public']){ // private
 			else {
 				$GLOBAL['target_folder'] = $GLOBAL['default_data_folder'].'/'.$new_folder;
 			}
-
-			/*GESTION DU PDF ICI*/
-			if (strtolower(substr($_GET['q'],-4))=='.pdf'){
-				$title=basename($_GET['q']);
-				file_put_contents($GLOBAL['target_folder'].'/'.$title,$GLOBAL['main_page_data']);
-				file_put_contents($GLOBAL['target_folder'].'/index.php','<?php header("location: '.$title.'");?>');
-			}else{
+      $urlInfo =pathinfo($GLOBAL['url']);
+      $title = $urlInfo['filename'];
+      $finfo = new finfo(FILEINFO_MIME_TYPE);
+      $mineType = $finfo->buffer($GLOBAL['main_page_data']);
+      if(array_key_exists($mineType, $GLOBAL['image'])){
+      $ext = $GLOBAL['image'][$mineType];
+      file_put_contents($GLOBAL['target_folder'].'/'.$title.'.'.$ext, $GLOBAL['main_page_data']);
+      file_put_contents($GLOBAL['target_folder'].'/index.php','<!DOCTYPE html><html><head><title>'.$title.'</title></head><body><img src="'.$title.'.'.$ext.'" alt="Save image from '.$GLOBAL['url'].'"/></body></html>');
+      } elseif(array_key_exists($mineType, $GLOBAL['document'])){
+        $ext = $GLOBAL['document'][$mineType];
+        $title=basename($_GET['q']);
+        file_put_contents($GLOBAL['target_folder'].'/'.$title,$GLOBAL['main_page_data']);
+        file_put_contents($GLOBAL['target_folder'].'/index.php','<?php header("location: '.$title.'");?>');
+			} elseif(array_key_exists($mineType, $GLOBAL['archive'])){
+        $ext = $GLOBAL['archive'][$mineType];
+        $title=basename($_GET['q']);
+        file_put_contents($GLOBAL['target_folder'].'/'.$title,$GLOBAL['main_page_data']);
+        file_put_contents($GLOBAL['target_folder'].'/index.php','<?php header("location: '.$title.'");?>');
+      }else{
 
 
 				$liste_css = array();
@@ -299,7 +314,7 @@ if (!$GLOBAL['public']){ // private
 
 
 							$matches_url = array_merge($matches_url2, $matches_url);
-					
+
 
 							// pour chaque URL/URI
 							foreach ($matches_url as $j => $valuej) {
@@ -371,18 +386,20 @@ if (!$GLOBAL['public']){ // private
 					$n++;
 					$count = count($liste_css);
 				}
+        $mineType = '';
 			}
-			// enregistre un fichier d’informations concernant la page (date, url, titre)
+			// enregistre un fichier d’informations concernant la page (date, url, titre, extension du fichier)
 			$info  = '';
 			$info .= 'URL="'.$GLOBAL['url'].'"'."\n";
 			$info .= 'TITLE="'.$title.'"'."\n";
 			$info .= 'DATE="'.time().'"'."\n";
+      $info .= 'TYPE="'.$ext.'"'."\n";
 			file_put_contents($GLOBAL['target_folder'].'/'.'index.ini', $info);
-			/*$GLOBAL['done']['d'] = 'ajout';			
+			/*$GLOBAL['done']['d'] = 'ajout';
 			$GLOBAL['done']['lien'] = $GLOBAL['target_folder'].'/';	*/
-			
+
 		}
-		
+
 	}//die;
 
 
@@ -394,7 +411,7 @@ if (!$GLOBAL['public']){ // private
 			$id=idfrompath($_GET['suppr']);
 			$status=statuspath($_GET['suppr']);
 			if (isset($GLOBAL['tag_array'][$status][$id])){deltags($GLOBAL['tag_array'][$status][$id],$_GET['suppr'],$id,$status);}
-			
+
 			// suppr page
 			$sousliste = scandir($_GET['suppr']); // listage des dossiers de data.
 			$nb_sousfichier = count($sousliste);
@@ -405,11 +422,11 @@ if (!$GLOBAL['public']){ // private
 			}
 			// then the folder itself.
 	        if (TRUE === rmdir($_GET['suppr'])) {
-					$GLOBAL['done']['d'] = 'remove';			
+					$GLOBAL['done']['d'] = 'remove';
 
 			}
 	    }
-	    
+
 	    header("location: index.php");
 	}
 
@@ -444,7 +461,7 @@ if (!$GLOBAL['public']){ // private
 
 	if (isset($_GET['privateget'])&&is_dir($GLOBAL['private_data_folder'].'/'.$_GET['privateget'])){$target=$GLOBAL['private_data_folder'].'/'.$_GET['privateget'];}
 
-	if (isset($_GET['zipprivate'])) { 
+	if (isset($_GET['zipprivate'])) {
 		$ini_file = $GLOBAL['private_data_folder'].'/'.$_GET['zipprivate'].'/index.ini';
 		if(is_file($ini_file)){$info=parse_ini_file($ini_file);}else{$info['TITLE']='';}
 		$origin_folder_path=$GLOBAL['private_data_folder'].'/'.$_GET['zipprivate'];
@@ -453,31 +470,31 @@ if (!$GLOBAL['public']){ // private
 		$zip_completepath=$GLOBAL['data_folder'].'/zipversions/'.$zip_filename;
 		if (is_file($zip_completepath)){header("location: $zip_completepath");exit();}// il existe déjà, on envoie
 		if (is_dir($origin_folder_path)){// sinon on crée le zip si le dossier existe
-			include 'zip.php';			
+			include 'zip.php';
 			rename ($origin_folder_path,$zip_foldername); // on le déplace pour éviter de voir la structure de dossiers apparaître dans le zip
-			zip($zip_filename,$zip_foldername,$GLOBAL['data_folder'].'/zipversions/');  
+			zip($zip_filename,$zip_foldername,$GLOBAL['data_folder'].'/zipversions/');
 			rename ($zip_foldername,$origin_folder_path); // on le remet à sa place
 			header('location: '.$GLOBAL['data_folder'].'/zipversions/'.$zip_filename);
 		}
 	}
 
-	if (isset($_GET['rename'])&&isset($_GET['to'])&&isset($_GET['file'])) { 
+	if (isset($_GET['rename'])&&isset($_GET['to'])&&isset($_GET['file'])) {
 		if (is_file($_GET['file'].'/index.ini')){
 			$ini=parse_ini_file($_GET['file'].'/index.ini');
-			
+
 			$old=strip_tags(urldecode($_GET['rename']));
 			$new=strip_tags(urldecode($_GET['to']));
 			$newini='URL="'.$ini['URL'].'"'."\n".'TITLE="'.$new.'"'."\n".'DATE="'.$ini['DATE'].'"';
 			file_put_contents($_GET['file'].'/index.ini',$newini);
 		}
 	}
-	if (isset($_GET['settag'])&&isset($_GET['file'])) { 
-		if (is_file($GLOBAL['data_folder'].'/tags.txt')){$GLOBAL['tag_array']=unstore($GLOBAL['data_folder'].'/tags.txt');}else{$GLOBAL['tag_array']=array();}	
+	if (isset($_GET['settag'])&&isset($_GET['file'])) {
+		if (is_file($GLOBAL['data_folder'].'/tags.txt')){$GLOBAL['tag_array']=unstore($GLOBAL['data_folder'].'/tags.txt');}else{$GLOBAL['tag_array']=array();}
 		if (isset($_GET['ispublic'])){$type='public';}else{$type='private';}
 		$GLOBAL['tag_array'][$type][$_GET['file']]=strip_tags($_GET['settag']);
 		store($GLOBAL['data_folder'].'/tags.txt',$GLOBAL['tag_array']);
 	}
-}else{ // public get 	
+}else{ // public get
 	//download public zip version
 	if (isset($_GET['zippublic'])) {
 	$ini_file = $GLOBAL['public_data_folder'].'/'.$_GET['zippublic'].'/index.ini';
@@ -488,9 +505,9 @@ if (!$GLOBAL['public']){ // private
 	$zip_completepath=$GLOBAL['data_folder'].'/zipversions/'.$zip_filename;
 	if (is_file($zip_completepath)){header("location: $zip_completepath");exit();}// il existe déjà, on envoie
 	if (is_dir($origin_folder_path)){// sinon on crée le zip si le dossier existe
-		include 'zip.php';			
+		include 'zip.php';
 		rename ($origin_folder_path,$zip_foldername); // on le déplace pour éviter de voir la structure de dossiers apparaître dans le zip
-		zip($zip_filename,$zip_foldername,$GLOBAL['data_folder'].'/zipversions/');  
+		zip($zip_filename,$zip_foldername,$GLOBAL['data_folder'].'/zipversions/');
 		rename ($zip_foldername,$origin_folder_path); // on le remet à sa place
 		header('location: '.$GLOBAL['data_folder'].'/zipversions/'.$zip_filename);
 	}
@@ -508,8 +525,8 @@ if (!$GLOBAL['public']){ // private
 			)
 		);
 		foreach ($items as $key=>$item){
-			if ($item!='index.html'){	
-				if (is_dir($GLOBAL['public_data_folder'].'/'.$item)){					
+			if ($item!='index.html'){
+				if (is_dir($GLOBAL['public_data_folder'].'/'.$item)){
 					if (is_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini')){
 						$infos=parse_ini_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini');
 						date_default_timezone_set('Europe/Paris');
@@ -531,10 +548,10 @@ if (!$GLOBAL['public']){ // private
 	}
 	if (isset($_GET['api'])){
 		$content=array();
-		$items=search('public',$search_tags);	
+		$items=search('public',$search_tags);
 		foreach ($items as $key=>$item){
-			if ($item!='index.html'){	
-				if (is_dir($GLOBAL['public_data_folder'].'/'.$item)){					
+			if ($item!='index.html'){
+				if (is_dir($GLOBAL['public_data_folder'].'/'.$item)){
 					if (is_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini')){
 						$infos=parse_ini_file($GLOBAL['public_data_folder'].'/'.$item.'/index.ini');
 						date_default_timezone_set('Europe/Paris');
@@ -572,7 +589,7 @@ function url_parts() {
 }
 
 //
-// Gets external file by URL. 
+// Gets external file by URL.
 // Make a stream context (better).
 //
 
@@ -792,6 +809,36 @@ function rand_new_name($name) {
 	return 'f_'.str_shuffle('abcd').mt_rand(100, 999).'--'.preg_replace('#[^\w.]#', '_', substr($name, 15)).'.'.pathinfo($name, PATHINFO_EXTENSION);
 }
 
+function returnLocalFavicon($path,$fileType){
+  $favicon = glob($path.'*favicon.*');
+  if(empty($favicon)){
+    if(file_exists('design/icons/'.$fileType.'.png')){
+    return 'design/icons/'.$fileType.'.png';
+    } else {
+     return 'design/icons/html.png';
+    }
+  } else {
+   return $favicon[0];
+  }
+}
+
+/**
+ * Améliore la sortie print
+ *
+ * @author Tatane http://www.tatane.info/index.php/print_rn
+ * @author http://www.blog.cactuscrew.com/77-print_rn.html
+ * @param $data (array) tableau à examiner
+ * @param $name (string) nom a affiché
+ * @return false affiche les clef valeur du tableau $data
+ */
+function n_print($data, $name = '') {
+  $aBackTrace = debug_backtrace();
+  echo '<h2>', $name, '</h2>';
+  echo '<fieldset style="border: 1px solid orange; padding: 5px;color: #333; background-color: #fff;">';
+  echo '<legend style="border:1px solid orange;padding: 1px;background-color:#eee;color:orange;">',             basename($aBackTrace[0]['file']), ' ligne => ', $aBackTrace[0]['line'], '</legend>';
+  echo '<pre>',           htmlentities(print_r($data, 1)), '</pre>';
+  echo '</fieldset><br />';
+}
 
 if ($GLOBAL['done']['d'] !== FALSE) {
 	switch($GLOBAL['done']['d']) {
@@ -813,7 +860,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 <!DOCTYPE html>
 <html>
 	<head>
-		<?php 
+		<?php
 		if (!empty($_GET['publicget'])){
 			$id=strip_tags($_GET['publicget']);
 			$temp=parse_ini_file($GLOBAL['public_data_folder'].'/'.$id.'/index.ini');
@@ -825,16 +872,16 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 		else{$page_title='Respawn';}
 		 ?>
 		<meta charset="utf-8" /></head>
-		<title><?php echo $page_title; ?></title>	
+		<title><?php echo $page_title; ?></title>
 		<link rel="stylesheet" type="text/css" href="<?php echo $GLOBAL['css_folder']; ?>/style.css"/>
 		<?php link2favicon($target);?>
 		<!--[if IE]><script> document.createElement("article");document.createElement("aside");document.createElement("section");document.createElement("footer");</script> <![endif]-->
-		
+
 	</head>
 <body <?php echo $bodyclass;?>>
 	<header><a href="<?php echo $GLOBAL['respawn_url'].$publicarg; ?>"><img src="<?php echo $GLOBAL['css_folder']; ?>/logo2.png"/></a>
 		<nav id="orpx_nav-bar">
-		<?php 
+		<?php
 
 			if (!$GLOBAL['public']){
 				echo "\t".'<form method="get" action="'.$_SERVER['PHP_SELF'].'" >'."\n";
@@ -846,7 +893,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 				if (!empty($target)){echo $page_title.' <a class="zip" href="?zippublic='.strip_tags($_GET['publicget']).'" title="Get ZIP version"></a>';}else{echo $GLOBAL['message'];}
 				echo '</p>';
 			}
-		
+
 			echo '<div class="tag_cloud">';
 			tagcloud();
 			echo '</div>';
@@ -887,9 +934,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 				if (is_dir($GLOBAL['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 					// each folder should contain such a file "index.ini".
 					$ini_file = $GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-					$favicon = glob($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
 
-					$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 					if ( is_file($ini_file) and is_readable($ini_file) ) {
 						$infos = parse_ini_file($ini_file);
 					} else {
@@ -900,7 +945,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 					} else {
 						$titre = 'titre'; $url = '#'; $date = 'date inconnue';
 					}
-
+          $favicon = returnLocalFavicon($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/',$infos['TYPE']);
 					$tags=$taglinks='';
 					if (isset($GLOBAL['tag_array']['public'][$liste_pages[$i]])){$tags=$GLOBAL['tag_array']['public'][$liste_pages[$i]];$taglinks=tag2links($GLOBAL['tag_array']['public'][$liste_pages[$i]]);}
 					echo "\t".'<li>';
@@ -925,8 +970,8 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 
 
 // PRIVATE PAGES ------------------------------------------------------------------------------------------
-		if (!$GLOBAL['public']){ 
-		
+		if (!$GLOBAL['public']){
+
 			echo '<div class="private" style="'.$column_width.'">'."\n";
 			$liste_pages = search('private',$search_tags);
 			if ( ($nb = count($liste_pages)) != 0 ) {
@@ -937,8 +982,6 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 					if (is_dir($GLOBAL['private_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 						// each folder should contain such a file "index.ini".
 						$ini_file = $GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-						$favicon=glob($GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
-						$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 						if ( is_file($ini_file) and is_readable($ini_file) ) {
 							$infos = parse_ini_file($ini_file);
 						} else {
@@ -949,19 +992,20 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 						} else {
 							$titre = 'titre'; $url = '#'; $date = 'date inconnue';
 						}
+            $favicon = returnLocalFavicon($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/',$infos['TYPE']);
 						$tags=$taglinks='';
 						if (isset($GLOBAL['tag_array']['private'][$liste_pages[$i]])){$tags=$GLOBAL['tag_array']['private'][$liste_pages[$i]];$taglinks=tag2links($GLOBAL['tag_array']['private'][$liste_pages[$i]]);}
-					
+
 						echo "\t".'
 						<li>
 							<a class="icon suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr">X</a>
 							<a class="title" href="?privateget='.$liste_pages[$i].'" title="'.$titre.'('.$date.')"><img src="'.$favicon.'"/>'.$titre.'</a>
-							<p class="infos">'.$taglinks.'</p> 
+							<p class="infos">'.$taglinks.'</p>
 							<p class="tools">
 								<a class="icon rename" onclick="rename(\''.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'\',\''.$titre.'\',this)" href="#" title="rename">R</a>
 								<a class="icon tagme" onclick="tag(\'\',\''.$liste_pages[$i].'\',\''.$tags.'\',this)" href="#" title="edit tags">T</a>
 								<a class="icon zip" href="?zipprivate='.$liste_pages[$i].'"  title="Download zip version">Z</a>
-								<a class="icon origine" href="'.$url.'" title="origin">&#10150;</a> 
+								<a class="icon origine" href="'.$url.'" title="origin">&#10150;</a>
 								<a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a>
 							</p>
 						</li>'."\n";
@@ -974,11 +1018,11 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 	}
 ?>
 	</aside>
-	<footer>				
-		<a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <a href='?public'>Public page link</a> - 
+	<footer>
+		<a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <a href='?public'>Public page link</a> -
 		<a href="?rss<?php if ($search_tags!='') {echo '&tag='.$search_tags; }?>"> RSS </a> -
-		<?php if (!$GLOBAL['public']){echo $bookmarklet;} ?> - 
-		<?php if (!$GLOBAL['public']){echo '<a href="config_page.php">Config</a>';} ?> - 
+		<?php if (!$GLOBAL['public']){echo $bookmarklet;} ?> -
+		<?php if (!$GLOBAL['public']){echo '<a href="config_page.php">Config</a>';} ?> -
 		<?php if (!$GLOBAL['public']){echo '<a href="?discotime">Disconnect</a>';}else{echo '<a href="login_form.php">Admin</a>';}?>
 	</footer>
 
@@ -987,14 +1031,14 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 			newname= prompt('Rename this page:',oldname);
 			if (newname && newname!=oldname){
 				obj.setAttribute('href',"<?php echo $GLOBAL['respawn_url']; ?>?rename="+encodeURIComponent(oldname)+"&to="+encodeURIComponent(newname)+"&file="+file);
-				
+
 			}else{}
 		}
 		function tag(ispublic,file,oldtags,obj){
 			newtags= prompt('Tags for this page:',oldtags);
 			if (newtags && newtags!=oldtags){
 				obj.setAttribute('href',"<?php echo $GLOBAL['respawn_url']; ?>?settag="+encodeURIComponent(newtags)+"&file="+file+ispublic);
-				
+
 			}else{}
 		}
 	</script>

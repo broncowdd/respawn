@@ -213,3 +213,11 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+mypersonaldata/private/
+!mypersonaldata/private/index.html
+mypersonaldata/public/
+!mypersonaldata/public/index.html
+mypersonaldata/zipversions/
+!mypersonaldata/zipversions/index.html
+pass.php
+user_config.php
