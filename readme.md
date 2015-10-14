@@ -26,6 +26,3 @@ Dézippez l'archive sur votre serveur, allez à l'adresse, créez un mot de pass
 Démo: http://respawn.warriordudimanche.net/index.php?public
 
 Bronco - bronco@warriordudimanche.net 
-
-De Bladebo : 
-J'ai effectué des modifications pour avoir un bloc de 'tag_cloud' qui s'affiche en Hover ainsi que des séparations de largeur de column entre public et privé
