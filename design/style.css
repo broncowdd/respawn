@@ -4,7 +4,7 @@ body {
 	width: 100%;
 	min-width:320px;
 	margin:0;padding:0;
-	font-family: Georgia, Serif;font-size : 16px; color: #050;
+	font-family: Georgia, Serif;font-size : 13px; color: #050;
 }
 a:hover  {	color: #050;text-shadow:0 0 3px green;}
 
@@ -38,9 +38,6 @@ header nav{display:inline-block; vertical-align: top;}
 header nav .zip{width:16px;height:16px; display:inline-block;background:url(zip.png) no-repeat;}
 header nav p{color:lightgreen;text-shadow: 0 1px 1px black;font-size:20px;}
 
-
-
-
 aside{height:100%;padding-bottom : 70px;text-align:center;}
 aside iframe{height:100%;border:none;}
 aside ul{padding:0;}
@@ -54,7 +51,8 @@ nav .tag_private{display:inline-block;border-radius:3px;padding:2px;margin:1px;b
 aside .private li .tag{display:inline-block;border-radius:3px;padding:2px;margin:1px;background:rgba(255,100,100,0.4);color:darkred;}
 aside .private li .tag:hover{background:rgba(255,0,0,0.5);}
 nav .tag_private:hover{background:red;}
-.tag_cloud{padding:2px;}
+.tag_cloud{padding:2px; height: 24px; overflow: hidden;}
+.tag_cloud:hover{padding:2px; height:100%; overflow: visible;transition: all 0.7s ease-out;}
 nav .tag_public{color:lightgreen;}
 
 aside .public,.private{overflow-x:hidden;min-width:300px;text-align:left;vertical-align:top; margin-top:25px;padding:10px; border-radius:3px; border:1px solid;display:inline-block;}
@@ -65,17 +63,11 @@ aside .private em{color:darkred;}
 aside li em {font-size:10px ;}
 aside .public li{background:rgba(100,255,100,0.2);}
 aside .private li{background:rgba(255,100,100,0.2);}
-
-aside li img {vertical-align:bottom;margin:1px;width:16px;height:16px;}
-/*aside li a.suppr,aside li a.rename,aside li a.origine, aside li a.zip, aside li a.tagme{opacity:0.5;width:16px;height:16px;display:inline-block;background:url(actions.png) no-repeat  0 -159px ;}
-aside li a.origine{background-position: 0 -396px ;}
-aside li a.zip{background-position: 0 2px ;}
-aside li a.tagme{background-position: 0 -63px ;}
-aside li a.rename{background-position: 0 -30px ;}
-aside li a.tagme:hover,aside li a.rename:hover,aside li a.suppr:hover,aside li a.origine:hover,aside li a.zip:hover{opacity:1;}*/
-aside li a.toprivate,aside li a.topublic{float:right;margin-right:5px;opacity:0.5;}
+li .infos{display:inline-block;padding:0;margin:0;}
+li .tools{display:inline-block;padding:0;margin:0;vertical-align: middle;}
+aside li img {vertical-align:middle;margin:1px;width:16px;height:16px;}
+aside li a.toprivate,aside li a.topublic{margin-right:5px;opacity:0.5;}
 aside li a.toprivate:hover,aside li a.topublic:hover{opacity:1;}
-
 
 footer	{
 	font-size:10px;text-align: right; color:lightgreen;text-shadow: 0 1px 1px black; position:fixed; line-height:15px;
@@ -92,3 +84,9 @@ body.iframe header input{vertical-align: top;}
 body.iframe header #____q{margin-top:2px;}
 body.iframe header nav{margin-top:2px;display:inline-block; vertical-align: top;}
 body.iframe header nav p{margin:0;padding:0;}
+
+body.config label{display:block;width:300px;margin:auto;}
+body.config input{display:block;width:300px;margin-bottom:30px;margin:auto;}
+body.config input[type=submit]{color:darkgreen;}
+body.config select{display:block;width:300px;margin-bottom:30px;margin:auto;}
+body.config h1{color:#5F0;}
