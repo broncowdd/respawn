@@ -44,7 +44,8 @@ $GLOBAL['public_data_folder']=$GLOBAL['data_folder'].'/public';
 $GLOBAL['default_data_folder']=$GLOBAL['data_folder'].'/'.$GLOBAL['default_data_folder'];
 
 $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:javascript:(function(){var url = location.href;window.open("http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].'?q="+ encodeURIComponent(url),"_blank","menubar=yes,height=600,width=1000,toolbar=yes,scrollbars=yes,status=yes");})();\' >Bookmarklet</a>';
-$column_width='width:47%';
+$column_width_public='width:60%';
+$column_width_private='width:30%';
 if ($GLOBAL['public']){$bookmarklet='';$column_width='width:97%';}
 if (!creer_dossier($GLOBAL['data_folder'], TRUE)) { die('Cant create '.$GLOBAL['data_folder'].' folder.'); }
 if (!creer_dossier($GLOBAL['data_folder'].'/zipversions', TRUE)) { die('Cant create '.$GLOBAL['data_folder'].'/zipversions'.' folder.'); }
@@ -577,7 +578,7 @@ function url_parts() {
 //
 
 function get_external_file($url, $timeout) {
-	$context = stream_context_create(array('http'=>array('timeout' => $timeout))); // Timeout : time until we stop waiting for the response.
+	$context = stream_context_create(array("ssl"=>array("verify_peer"=>false,"verify_peer_name"=>false),'http'=>array('timeout' => $timeout))); // Timeout : time until we stop waiting for the response.
 	$data = @file_get_contents($url, false, $context, -1, 4000000); // We download at most 4 Mb from source.
 	if (isset($data) and isset($http_response_header) and isset($http_response_header[0]) and (strpos($http_response_header[0], '200 OK') !== FALSE) ) {
 		return $data;
@@ -618,10 +619,10 @@ function list_retrievable_data($url, &$data) {
 	// cherche les balises 'link' qui contiennent  un rel="(icon|favicon|stylesheet)" et un href=""
 	// (on ne cherche pas uniquement le "href" sinon on se retrouve avec les flux RSS aussi)
 	$matches = array();
-	preg_match_all('#<\s*link[^>]+rel=["\'][^"\']*(icon|favicon|stylesheet)[^"\']*["\'][^>]*>#Si', $data, $matches, PREG_SET_ORDER);
+	preg_match_all('#<\s*link[^>]+rel=["\'][^"\']*(shortcut icon|apple-touch-icon|icon|favicon|stylesheet)[^"\']*["\'][^>]*>#Si', $data, $matches, PREG_SET_ORDER);
 	// dans les link avec une icone, stylesheet, etc récupère l’url.
 	foreach($matches as $i => $key) {
-		$type =  (strpos($key[1], 'stylesheet') !== FALSE) ? 'css' : 'other';
+		$type =  (strpos($key[1], 'stylesheet') !== FALSE) ? 'css' : 'icon';
 		if ( (preg_match_all('#(href|src)=["\']([^"\']*)["\']#i', $matches[$i][0], $matches_attr, PREG_SET_ORDER) === 1) ) {
 			$retrievable = add_table_and_replace($data, $retrievable, $matches[$i][0], $matches_attr[0][2], $url_p, $type);
 		}
@@ -759,6 +760,9 @@ function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $
 	if ($type == 'css') {
 		$nouveau_nom = $nouveau_nom.'.css';
 	}
+	if ($type == 'icon'){
+	    $nouveau_nom = 'favicon'.$nouveau_nom;
+	}
 	$add = TRUE;
 
 	// avoids downloading the same file twice.
@@ -847,7 +851,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 				echo '</p>';
 			}
 		
-			echo '<div class="tag_cloud">';
+			echo '<div class="tag_cloud"><a class="tag_public" href="#">More Tag Here<a>';
 			tagcloud();
 			echo '</div>';
 		?>
@@ -876,7 +880,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 			}
 		}
 		// public pages
-		echo '<div class="public" style="'.$column_width.'">'."\n";
+		echo '<div class="public" style="'.$column_width_public.'">'."\n";
 		$liste_pages = search('public',$search_tags);
 
 		if ( ($nb = count($liste_pages)) != 0 ) {
@@ -887,7 +891,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 				if (is_dir($GLOBAL['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 					// each folder should contain such a file "index.ini".
 					$ini_file = $GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-					$favicon = glob($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
+					$favicon = glob($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/favicon*.*');
 
 					$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 					if ( is_file($ini_file) and is_readable($ini_file) ) {
@@ -927,7 +931,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 // PRIVATE PAGES ------------------------------------------------------------------------------------------
 		if (!$GLOBAL['public']){ 
 		
-			echo '<div class="private" style="'.$column_width.'">'."\n";
+			echo '<div class="private" style="'.$column_width_private.'">'."\n";
 			$liste_pages = search('private',$search_tags);
 			if ( ($nb = count($liste_pages)) != 0 ) {
 				echo '<ul id="liste-pages-sauvees">'."\n";
