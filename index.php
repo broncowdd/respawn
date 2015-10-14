@@ -578,7 +578,7 @@ function url_parts() {
 //
 
 function get_external_file($url, $timeout) {
-	$context = stream_context_create(array('http'=>array('timeout' => $timeout))); // Timeout : time until we stop waiting for the response.
+	$context = stream_context_create(array("ssl"=>array("verify_peer"=>false,"verify_peer_name"=>false),'http'=>array('timeout' => $timeout))); // Timeout : time until we stop waiting for the response.
 	$data = @file_get_contents($url, false, $context, -1, 4000000); // We download at most 4 Mb from source.
 	if (isset($data) and isset($http_response_header) and isset($http_response_header[0]) and (strpos($http_response_header[0], '200 OK') !== FALSE) ) {
 		return $data;
@@ -622,7 +622,7 @@ function list_retrievable_data($url, &$data) {
 	preg_match_all('#<\s*link[^>]+rel=["\'][^"\']*(shortcut icon|apple-touch-icon|icon|favicon|stylesheet)[^"\']*["\'][^>]*>#Si', $data, $matches, PREG_SET_ORDER);
 	// dans les link avec une icone, stylesheet, etc récupère l’url.
 	foreach($matches as $i => $key) {
-		$type =  (strpos($key[1], 'stylesheet') !== FALSE) ? 'css' : 'other';
+		$type =  (strpos($key[1], 'stylesheet') !== FALSE) ? 'css' : 'icon';
 		if ( (preg_match_all('#(href|src)=["\']([^"\']*)["\']#i', $matches[$i][0], $matches_attr, PREG_SET_ORDER) === 1) ) {
 			$retrievable = add_table_and_replace($data, $retrievable, $matches[$i][0], $matches_attr[0][2], $url_p, $type);
 		}
@@ -760,6 +760,9 @@ function add_table_and_replace(&$data, $retrievable, &$match1, $match, $url_p, $
 	if ($type == 'css') {
 		$nouveau_nom = $nouveau_nom.'.css';
 	}
+	if ($type == 'icon'){
+	    $nouveau_nom = 'favicon'.$nouveau_nom;
+	}
 	$add = TRUE;
 
 	// avoids downloading the same file twice.
@@ -888,7 +891,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 				if (is_dir($GLOBAL['public_data_folder'].'/'.$liste_pages[$i]) and ($liste_pages[$i] != '.') and ($liste_pages[$i] != '..')) {
 					// each folder should contain such a file "index.ini".
 					$ini_file = $GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/index.ini';
-					$favicon = glob($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/*favicon.*');
+					$favicon = glob($GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'/favicon*.*');
 
 					$favicon = (isset($favicon[0])) ? $favicon[0] : '';
 					if ( is_file($ini_file) and is_readable($ini_file) ) {
