@@ -44,8 +44,7 @@ $GLOBAL['public_data_folder']=$GLOBAL['data_folder'].'/public';
 $GLOBAL['default_data_folder']=$GLOBAL['data_folder'].'/'.$GLOBAL['default_data_folder'];
 
 $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:javascript:(function(){var url = location.href;window.open("http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].'?q="+ encodeURIComponent(url),"_blank","menubar=yes,height=600,width=1000,toolbar=yes,scrollbars=yes,status=yes");})();\' >Bookmarklet</a>';
-$column_width_public='width:60%';
-$column_width_private='width:30%';
+$column_width='width:47%';
 if ($GLOBAL['public']){$bookmarklet='';$column_width='width:97%';}
 if (!creer_dossier($GLOBAL['data_folder'], TRUE)) { die('Cant create '.$GLOBAL['data_folder'].' folder.'); }
 if (!creer_dossier($GLOBAL['data_folder'].'/zipversions', TRUE)) { die('Cant create '.$GLOBAL['data_folder'].'/zipversions'.' folder.'); }
@@ -851,7 +850,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 				echo '</p>';
 			}
 		
-			echo '<div class="tag_cloud"><a class="tag_public" href="#">More Tag Here<a>';
+			echo '<div class="tag_cloud">';
 			tagcloud();
 			echo '</div>';
 		?>
@@ -880,7 +879,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 			}
 		}
 		// public pages
-		echo '<div class="public" style="'.$column_width_public.'">'."\n";
+		echo '<div class="public" style="'.$column_width.'">'."\n";
 		$liste_pages = search('public',$search_tags);
 
 		if ( ($nb = count($liste_pages)) != 0 ) {
@@ -931,7 +930,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 // PRIVATE PAGES ------------------------------------------------------------------------------------------
 		if (!$GLOBAL['public']){ 
 		
-			echo '<div class="private" style="'.$column_width_private.'">'."\n";
+			echo '<div class="private" style="'.$column_width.'">'."\n";
 			$liste_pages = search('private',$search_tags);
 			if ( ($nb = count($liste_pages)) != 0 ) {
 				echo '<ul id="liste-pages-sauvees">'."\n";
