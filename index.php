@@ -33,11 +33,15 @@ else{$publicarg='';$bodyclass='';$GLOBAL['public']=false;include 'auto_restrict.
 if (isset($_GET['tag'])){$search_tags=strip_tags($_GET['tag']);}else{$search_tags='';}
 
 // CONFIGURABLE OPTIONS
-// change those directories'names for more security
+// adapter la configuration dans le fichier config.php
 include('config.php');
 
-$GLOBAL['version']='2.1';
+$GLOBAL['version']='2.2';
 $GLOBAL['respawn_url']=returncurrenturl();
+$GLOBAL['css_folder']='design/'.$GLOBAL['skin'];
+$GLOBAL['private_data_folder']=$GLOBAL['data_folder'].'/private';
+$GLOBAL['public_data_folder']=$GLOBAL['data_folder'].'/public';
+$GLOBAL['default_data_folder']=$GLOBAL['data_folder'].'/'.$GLOBAL['default_data_folder'];
 
 $bookmarklet='<a title="Drag this link to your shortcut bar" href=\'javascript:javascript:(function(){var url = location.href;window.open("http://'.$_SERVER['SERVER_NAME'].$_SERVER['PHP_SELF'].'?q="+ encodeURIComponent(url),"_blank","menubar=yes,height=600,width=1000,toolbar=yes,scrollbars=yes,status=yes");})();\' >Bookmarklet</a>';
 $column_width='width:47%';
@@ -85,13 +89,14 @@ function settags($tags,$path,$id=false,$status=false){
 	store($GLOBAL['data_folder'].'/tags.txt',$GLOBAL['tag_array']);
 }
 function link2favicon($dir){
-	if (!is_dir($dir)){return '<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">';}
+	global $GLOBAL;
+	if (!is_dir($dir)){echo '<link rel="shortcut icon" type="/image/png" href="'.$GLOBAL['css_folder'].'/favicon2.png">';}
 	$favs=glob($dir.'/*favicon*');
 	if (count($favs)>0){$fav=basename($favs[0]);
 		$extension=pathinfo($dir,PATHINFO_EXTENSION);
 		echo '<link rel="shortcut icon" type="/image/'.$extension.'" href="'.$dir.'/'.$fav.'">';
 	}else{
-		echo '<link rel="shortcut icon" type="/image/png" href="design/favicon2.png">';;
+		echo '<link rel="shortcut icon" type="/image/png" href="'.$GLOBAL['css_folder'].'/favicon2.png">';;
 	}
 }
 function search($public='public',$tag=false){
@@ -816,19 +821,21 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 		}else if (!empty($search_tags)){
 			$page_title='Tag: '.$search_tags;
 		}
-		else{$page_title='Respawn – a PHP WebPage Saver'; }
+		else if ($GLOBAL['public']){$page_title=$GLOBAL['public_title']; }
+		else{$page_title='Respawn';}
 		 ?>
 		<meta charset="utf-8" /></head>
 		<title><?php echo $page_title; ?></title>	
-		<link rel="stylesheet" type="text/css" href="design/style.css"/>
+		<link rel="stylesheet" type="text/css" href="<?php echo $GLOBAL['css_folder']; ?>/style.css"/>
 		<?php link2favicon($target);?>
 		<!--[if IE]><script> document.createElement("article");document.createElement("aside");document.createElement("section");document.createElement("footer");</script> <![endif]-->
 		
 	</head>
 <body <?php echo $bodyclass;?>>
-	<header><a href="<?php echo $GLOBAL['respawn_url'].$publicarg; ?>"><img src="design/logo2.png"/></a>
+	<header><a href="<?php echo $GLOBAL['respawn_url'].$publicarg; ?>"><img src="<?php echo $GLOBAL['css_folder']; ?>/logo2.png"/></a>
 		<nav id="orpx_nav-bar">
 		<?php 
+
 			if (!$GLOBAL['public']){
 				echo "\t".'<form method="get" action="'.$_SERVER['PHP_SELF'].'" >'."\n";
 				echo "\t\t".'<input id="____q" type="text" size="70" name="q" value="" placeholder="URL from the page to download" />'."\n";
@@ -898,10 +905,17 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 					if (isset($GLOBAL['tag_array']['public'][$liste_pages[$i]])){$tags=$GLOBAL['tag_array']['public'][$liste_pages[$i]];$taglinks=tag2links($GLOBAL['tag_array']['public'][$liste_pages[$i]]);}
 					echo "\t".'<li>';
 					if (!$GLOBAL['public']){echo '<a class="icon suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'" title="suppr">X</a>';}
-					if (!$GLOBAL['public']){echo '<a class="icon rename" onclick="rename(\''.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'\',\''.$titre.'\',this)" href="" title="rename">R</a>';}
-					if (!$GLOBAL['public']){echo '<a class="icon tagme" onclick="tag(\'&ispublic\',\''.$liste_pages[$i].'\',\''.$tags.'\',this)" href="#" title="edit tags">T</a>';}
-					echo '<a class="icon zip" href="?zippublic='.$liste_pages[$i].'"  title="Download zip version">Z</a><a class="icon origine" href="'.$url.'" title="origin">&#10150;</a> - <a href="?public&publicget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em> '.$taglinks;
-					if (!$GLOBAL['public']){echo '<a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a></li>'."\n";}else{echo "</li>\n";}
+					echo '<a class="title" href="?public&publicget='.$liste_pages[$i].'" title="'.$titre.'('.$date.')"><img src="'.$favicon.'"/>'.$titre.'</a>';
+					echo '<p class="infos">';
+					echo $taglinks;
+					echo '</p>';
+					echo '<p class="tools">';
+						if (!$GLOBAL['public']){echo '<a class="icon rename" onclick="rename(\''.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'\',\''.$titre.'\',this)" href="" title="rename">R</a>';}
+						if (!$GLOBAL['public']){echo '<a class="icon tagme" onclick="tag(\'&ispublic\',\''.$liste_pages[$i].'\',\''.$tags.'\',this)" href="#" title="edit tags">T</a>';}
+						echo '<a class="icon zip" href="?zippublic='.$liste_pages[$i].'"  title="Download zip version">Z</a><a class="icon origine" href="'.$url.'" title="origin">&#10150;</a> ';
+						if (!$GLOBAL['public']){echo '<a href="?toprivate='.$liste_pages[$i].'" class="toprivate" title="Change to private">&#9654;</a>'."\n";}else{echo "\n";}
+					echo '</p>
+					</li>';
 				}
 			}
 			echo '</ul>'."\n";
@@ -938,11 +952,19 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 						$tags=$taglinks='';
 						if (isset($GLOBAL['tag_array']['private'][$liste_pages[$i]])){$tags=$GLOBAL['tag_array']['private'][$liste_pages[$i]];$taglinks=tag2links($GLOBAL['tag_array']['private'][$liste_pages[$i]]);}
 					
-						echo "\t".'<li><a class="icon suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr">X</a>
-						<a class="icon rename" onclick="rename(\''.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'\',\''.$titre.'\',this)" href="#" title="rename">R</a>
-						<a class="icon tagme" onclick="tag(\'\',\''.$liste_pages[$i].'\',\''.$tags.'\',this)" href="#" title="edit tags">T</a>
-						<a class="icon zip" href="?zipprivate='.$liste_pages[$i].'"  title="Download zip version">Z</a>
-						<a class="icon origine" href="'.$url.'" title="origin">&#10150;</a> - <a href="?privateget='.$liste_pages[$i].'"><img src="'.$favicon.'"/>'.$titre.'</a> <em> ['.$date.']</em> '.$taglinks.' <a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a></li>'."\n";
+						echo "\t".'
+						<li>
+							<a class="icon suppr" onclick="return window.confirm(\'Sure to remove?\')" href="?suppr='.$GLOBAL['private_data_folder'].'/'.$liste_pages[$i].'" title="suppr">X</a>
+							<a class="title" href="?privateget='.$liste_pages[$i].'" title="'.$titre.'('.$date.')"><img src="'.$favicon.'"/>'.$titre.'</a>
+							<p class="infos">'.$taglinks.'</p> 
+							<p class="tools">
+								<a class="icon rename" onclick="rename(\''.$GLOBAL['public_data_folder'].'/'.$liste_pages[$i].'\',\''.$titre.'\',this)" href="#" title="rename">R</a>
+								<a class="icon tagme" onclick="tag(\'\',\''.$liste_pages[$i].'\',\''.$tags.'\',this)" href="#" title="edit tags">T</a>
+								<a class="icon zip" href="?zipprivate='.$liste_pages[$i].'"  title="Download zip version">Z</a>
+								<a class="icon origine" href="'.$url.'" title="origin">&#10150;</a> 
+								<a href="?topublic='.$liste_pages[$i].'" class="topublic" title="Change to public">&#9664;</a>
+							</p>
+						</li>'."\n";
 					}
 				}
 				echo '</ul>'."\n";
@@ -956,6 +978,7 @@ if ($GLOBAL['done']['d'] !== FALSE) {
 		<a title='from TiMo' href='http://lehollandaisvolant.net/index.php?mode=links&id=20121211195941'>Respawn</a> (bronco edition v<?php echo $GLOBAL['version'];?>) - <a href='?public'>Public page link</a> - 
 		<a href="?rss<?php if ($search_tags!='') {echo '&tag='.$search_tags; }?>"> RSS </a> -
 		<?php if (!$GLOBAL['public']){echo $bookmarklet;} ?> - 
+		<?php if (!$GLOBAL['public']){echo '<a href="config_page.php">Config</a>';} ?> - 
 		<?php if (!$GLOBAL['public']){echo '<a href="?discotime">Disconnect</a>';}else{echo '<a href="login_form.php">Admin</a>';}?>
 	</footer>
 
