@@ -619,7 +619,7 @@ function list_retrievable_data($url, &$data) {
 	// cherche les balises 'link' qui contiennent  un rel="(icon|favicon|stylesheet)" et un href=""
 	// (on ne cherche pas uniquement le "href" sinon on se retrouve avec les flux RSS aussi)
 	$matches = array();
-	preg_match_all('#<\s*link[^>]+rel=["\'][^"\']*(icon|favicon|stylesheet)[^"\']*["\'][^>]*>#Si', $data, $matches, PREG_SET_ORDER);
+	preg_match_all('#<\s*link[^>]+rel=["\'][^"\']*(shortcut icon|apple-touch-icon|icon|favicon|stylesheet)[^"\']*["\'][^>]*>#Si', $data, $matches, PREG_SET_ORDER);
 	// dans les link avec une icone, stylesheet, etc récupère l’url.
 	foreach($matches as $i => $key) {
 		$type =  (strpos($key[1], 'stylesheet') !== FALSE) ? 'css' : 'other';
