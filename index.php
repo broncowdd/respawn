@@ -627,6 +627,12 @@ function list_retrievable_data($url, &$data) {
 			$retrievable = add_table_and_replace($data, $retrievable, $matches[$i][0], $matches_attr[0][2], $url_p, $type);
 		}
 	}
+	
+	/*ajoute une l'url pour le favicon si pas d'autres url de favicon trouvé*/
+	if(empty($matches)){
+		$valueIcon = '/favicon.ico';
+		$retrievable = add_table_and_replace($data, $retrievable, $valueIcon , $valueIcon, $url_p, 'icon');	
+	}
 
 	// recherche les images, scripts, audio & videos HTML5.
 	// dans les balises, récupère l’url/uri contenue dans les src="".
